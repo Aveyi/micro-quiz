@@ -5,7 +5,7 @@
 .claude/
 
 # Собранные бинарники (go build в папке модуля)
-/scoreboard/scoreboard
+/live/live
 
 # Переменные окружения с секретами (понадобятся с БД)
 .env
