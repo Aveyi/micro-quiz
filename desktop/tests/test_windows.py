@@ -53,12 +53,11 @@ def test_navigation(qtbot, window):
     assert window.current_screen_name() == "join"
 
 
-def test_unauthorized_returns_to_start(window):
-    window.api.token = "old"
-    window.navigate("login")
+def test_unauthorized_returns_to_login(window):
+    window.login("old", "teacher")
     window.api.unauthorized.emit()
-    assert window.api.token is None
-    assert window.current_screen_name() == "start"
+    assert window.api.token is None and window.username is None
+    assert window.current_screen_name() == "login"
 
 
 def test_status_bar_shows_server(window):

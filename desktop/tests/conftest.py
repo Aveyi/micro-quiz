@@ -24,30 +24,37 @@ def settings(tmp_path):
 
 
 class _Handler(BaseHTTPRequestHandler):
-    # Ответы по пути запроса: (код, тело). Тело-словарь отдаётся как JSON.
+    # Ответы по умолчанию: путь → (код, тело). Тело-словарь отдаётся как JSON.
+    # Тест может поменять ответы своего сервера: server.routes["/путь"] = (код, тело).
+    # Тело-список тоже отдаётся как JSON.
     routes = {
         "/ok": (200, {"value": 1, "text": "привет"}),
         "/empty": (204, None),
         "/conflict": (409, {"error": "имя пользователя уже занято"}),
         "/html": (500, "<h1>Internal Server Error</h1>"),
-        "/api/quizzes": (401, {"error": "нужна авторизация"}),
+        # Как настоящий content: без токена 401, с токеном — список викторин.
+        "/api/quizzes": lambda req: (200, []) if "Authorization" in req["headers"] else (401, {"error": "нужна авторизация"}),
     }
 
     def _respond(self):
         length = int(self.headers.get("Content-Length") or 0)
-        self.server.requests.append(
-            {
-                "method": self.command,
-                "path": self.path,
-                "headers": dict(self.headers),
-                "body": self.rfile.read(length).decode() if length else None,
-            }
-        )
-        status, body = self.routes.get(self.path, (404, {"error": "не найдено"}))
-        raw = b"" if body is None else (json.dumps(body) if isinstance(body, dict) else body).encode()
+        req = {
+            "method": self.command,
+            "path": self.path,
+            "headers": dict(self.headers),
+            "body": self.rfile.read(length).decode() if length else None,
+        }
+        self.server.requests.append(req)
+        # Ответ — пара (код, тело) или функция от запроса, которая её возвращает.
+        # Ключ — "МЕТОД /путь" или просто "/путь" для любого метода.
+        routes = self.server.routes
+        route = routes.get(f"{self.command} {self.path}", routes.get(self.path, (404, {"error": "не найдено"})))
+        status, body = route(req) if callable(route) else route
+        is_json = isinstance(body, (dict, list))
+        raw = b"" if body is None else (json.dumps(body) if is_json else body).encode()
         self.send_response(status)
         if raw:
-            self.send_header("Content-Type", "application/json" if isinstance(body, dict) else "text/html")
+            self.send_header("Content-Type", "application/json" if is_json else "text/html")
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
         self.wfile.write(raw)
@@ -63,6 +70,7 @@ def server():
     """Локальный HTTP-сервер с заготовленными ответами; адрес — server.url."""
     srv = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)  # порт 0 — любой свободный
     srv.requests = []
+    srv.routes = dict(_Handler.routes)
     srv.url = f"http://127.0.0.1:{srv.server_address[1]}"
     thread = threading.Thread(target=srv.serve_forever, daemon=True)
     thread.start()

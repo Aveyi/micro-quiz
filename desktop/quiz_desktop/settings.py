@@ -50,3 +50,14 @@ class AppSettings:
     def server_url(self, value: str) -> None:
         self._s.setValue("server_url", normalize_server_url(value))
         self._s.sync()
+
+    @property
+    def last_username(self) -> str:
+        """Имя последнего вошедшего ведущего — подставляется на экране входа.
+        Пароль и токен не сохраняем: их не должно быть на диске."""
+        return self._s.value("last_username", "", type=str)
+
+    @last_username.setter
+    def last_username(self, value: str) -> None:
+        self._s.setValue("last_username", value)
+        self._s.sync()

@@ -21,12 +21,13 @@ class Screen(QWidget):
     def api(self):
         return self.window_.api
 
-    def navigate(self, name: str) -> None:
-        self.window_.navigate(name)
+    def navigate(self, name: str, **params) -> None:
+        self.window_.navigate(name, **params)
 
-    def entered(self) -> None:
+    def entered(self, **params) -> None:
         """Вызывается каждый раз, когда экран показывают. Здесь экран
-        обновляет данные, например перезагружает список викторин."""
+        обновляет данные, например перезагружает список викторин.
+        params — то, что передали в navigate(), например quiz_id для редактора."""
 
 
 class PlaceholderScreen(Screen):
@@ -34,13 +35,19 @@ class PlaceholderScreen(Screen):
 
     def __init__(self, window: "MainWindow", title: str, back_to: str = "start"):
         super().__init__(window)
-        label = QLabel(f"{title}\n\nЭкран в разработке")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._title = title
+        self.label = QLabel()
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         back = QPushButton("← Назад")
         back.clicked.connect(lambda: self.navigate(back_to))
 
         layout = QVBoxLayout(self)
         layout.addStretch()
-        layout.addWidget(label)
+        layout.addWidget(self.label)
         layout.addWidget(back, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addStretch()
+
+    def entered(self, **params) -> None:
+        # Показываем параметры перехода: видно, что экран получил нужные данные.
+        details = "\n".join(f"{k}: {v}" for k, v in params.items())
+        self.label.setText(f"{self._title}\n\nЭкран в разработке\n\n{details}".rstrip())

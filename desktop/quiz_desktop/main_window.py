@@ -5,7 +5,9 @@ from PySide6.QtWidgets import QLabel, QMainWindow, QStackedWidget
 from quiz_desktop.api import ApiClient
 from quiz_desktop.screens.base import PlaceholderScreen, Screen
 from quiz_desktop.screens.host import HostScreen
+from quiz_desktop.screens.login import LoginScreen
 from quiz_desktop.screens.player import PlayerScreen
+from quiz_desktop.screens.quizzes import QuizzesScreen
 from quiz_desktop.screens.start import StartScreen
 from quiz_desktop.settings import AppSettings
 from quiz_desktop.settings_dialog import SettingsDialog
@@ -17,6 +19,7 @@ class MainWindow(QMainWindow):
         self.settings = settings
         self.api = ApiClient(settings.server_url, self)
         self.api.unauthorized.connect(self._on_unauthorized)
+        self.username: str | None = None  # вошедший ведущий
 
         self.setWindowTitle("Онлайн-викторина")
         self.resize(960, 640)
@@ -26,17 +29,23 @@ class MainWindow(QMainWindow):
         self._screens: dict[str, Screen] = {}
 
         self.add_screen("start", StartScreen(self))
-        # Заглушки, пока экраны не готовы. Разделение — docs/quiz-design.md, раздел 10:
-        # вход, викторины, редактор, история — участник 2; экраны игры — участник 1.
-        self.add_screen("login", PlaceholderScreen(self, "Вход ведущего"))
+        self.add_screen("login", LoginScreen(self))
+        self.add_screen("quizzes", QuizzesScreen(self))
+        # Экраны игры (участник 1). host_game открывается из «Моих викторин»
+        # с quiz_id и сам создаёт комнату.
         self.add_screen("join", PlayerScreen(self))
-        # Экран игры ведущего: открывается из списка викторин с quiz_id.
         self.add_screen("host_game", HostScreen(self))
+        # Заглушки, пока экраны не готовы (участник 2, docs/quiz-design.md, раздел 10).
+        self.add_screen("editor", PlaceholderScreen(self, "Редактор викторины", back_to="quizzes"))
+        self.add_screen("history", PlaceholderScreen(self, "История игр", back_to="quizzes"))
 
         self._build_menu()
+        self._user_label = QLabel()
         self._server_label = QLabel()
+        self.statusBar().addPermanentWidget(self._user_label)
         self.statusBar().addPermanentWidget(self._server_label)
         self._update_server_label()
+        self._update_user()
 
         self.navigate("start")
 
@@ -44,10 +53,10 @@ class MainWindow(QMainWindow):
         self._screens[name] = screen
         self._stack.addWidget(screen)
 
-    def navigate(self, name: str) -> None:
+    def navigate(self, name: str, **params) -> None:
         screen = self._screens[name]
         self._stack.setCurrentWidget(screen)
-        screen.entered()
+        screen.entered(**params)
 
     def current_screen_name(self) -> str:
         current = self._stack.currentWidget()
@@ -56,8 +65,23 @@ class MainWindow(QMainWindow):
     def _build_menu(self) -> None:
         menu = self.menuBar().addMenu("&Приложение")
         menu.addAction("&Настройки сервера…", self.open_settings)
+        self._logout_action = menu.addAction("Выйти из &аккаунта", self.logout)
         menu.addSeparator()
         menu.addAction("&Выход", self.close)
+
+    def login(self, token: str, username: str) -> None:
+        """Ведущий вошёл: запоминаем токен (только в памяти) и открываем его викторины."""
+        self.api.token = token
+        self.username = username
+        self.settings.last_username = username
+        self._update_user()
+        self.navigate("quizzes")
+
+    def logout(self) -> None:
+        self.api.token = None
+        self.username = None
+        self._update_user()
+        self.navigate("start")
 
     def open_settings(self) -> None:
         dialog = SettingsDialog(self.settings.server_url, self)
@@ -65,14 +89,18 @@ class MainWindow(QMainWindow):
             self.settings.server_url = dialog.server_url
             self.api.base_url = self.settings.server_url
             # Токен выдан другим сервером, на новом он недействителен.
-            self.api.token = None
             self._update_server_label()
-            self.navigate("start")
+            self.logout()
 
     def _update_server_label(self) -> None:
         self._server_label.setText(f"Сервер: {self.settings.server_url}")
 
+    def _update_user(self) -> None:
+        self._user_label.setText(f"Ведущий: {self.username}" if self.username else "")
+        self._logout_action.setEnabled(self.username is not None)
+
     def _on_unauthorized(self) -> None:
-        self.api.token = None
-        self.navigate("start")
+        # Токен живёт 12 часов (docs/quiz-design.md, раздел 6), потом сервер отвечает 401.
+        self.logout()
+        self.navigate("login")
         self.statusBar().showMessage("Сессия истекла, войдите снова", 10_000)

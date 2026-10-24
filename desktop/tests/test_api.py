@@ -64,10 +64,11 @@ def test_token_only_when_auth(qtbot, api, server):
     assert server.requests[-1]["headers"]["Authorization"] == "Bearer abc"
 
 
-def test_unauthorized_signal(qtbot, api):
+def test_unauthorized_signal(qtbot, api, server):
+    server.routes["/expired"] = (401, {"error": "токен невалиден или просрочен"})
     api.token = "expired"
     with qtbot.waitSignal(api.unauthorized, timeout=5000):
-        kind, err = wait(qtbot, api.get("/api/quizzes", auth=True))
+        kind, err = wait(qtbot, api.get("/expired", auth=True))
     assert err.status == 401
 
 

@@ -154,10 +154,10 @@ def test_create_room_error(qtbot, window, live):
     assert live.sockets == []  # к WebSocket даже не подключались
 
 
-def test_ws_401_returns_to_start(qtbot, host, window):
+def test_ws_401_returns_to_login(qtbot, host, window):
     # Токен истёк между созданием комнаты и подключением.
     host._on_failed(LiveError(401, "Сессия ведущего истекла, войдите снова"))
-    assert window.current_screen_name() == "start"
+    assert window.current_screen_name() == "login"
     assert window.api.token is None
 
 
@@ -176,7 +176,7 @@ def test_close_room_asks_first(qtbot, host, live, monkeypatch, window):
 
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Yes)
     host.close_room()
-    assert window.current_screen_name() == "start"  # списка викторин пока нет
+    assert window.current_screen_name() == "quizzes"  # обратно к списку викторин
     qtbot.waitUntil(live.is_disconnected, timeout=5000)
 
 

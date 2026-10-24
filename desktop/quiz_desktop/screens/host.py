@@ -218,7 +218,7 @@ class HostScreen(Screen):
     def _on_failed(self, error) -> None:
         self._forget_live()
         if error.code == 401:
-            self.api.unauthorized.emit()  # окно вернёт на старт и попросит войти
+            self.api.unauthorized.emit()  # окно откроет экран входа
             return
         self._show_message(f"Не удалось подключиться к комнате: {error.message}")
 

@@ -110,6 +110,11 @@ class ApiClient(QObject):
         QTimer.singleShot(0, lambda: self._deliver(result, status, raw, timed_out, error_text, auth))
 
     def _deliver(self, result: ApiReply, status: int, raw: bytes, timed_out: bool, error_text: str, auth: bool) -> None:
+        # Клиент удалён вместе со своим окном, пока шёл запрос. Ответ отбрасываем:
+        # обработчики (часто лямбды) обратились бы к уже удалённым виджетам окна,
+        # а лямбды, в отличие от методов виджетов, Qt сам не отключает.
+        if not shiboken6.isValid(self):
+            return
         if status == 0:
             # Ответа нет вовсе: сервер выключен, неверный адрес или таймаут.
             if timed_out:
@@ -131,7 +136,6 @@ class ApiClient(QObject):
             message = data["error"]
         else:
             message = f"ошибка сервера (код {status})"
-        # isValid: клиент могли удалить, пока шёл запрос (например, закрыли окно).
-        if status == 401 and auth and shiboken6.isValid(self):
+        if status == 401 and auth:
             self.unauthorized.emit()
         result.failed.emit(ApiError(status, message))
