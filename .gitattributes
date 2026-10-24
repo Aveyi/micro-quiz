@@ -1,0 +1,21 @@
+# Все текстовые файлы храним и выдаём с переводом строки LF,
+# даже на Windows: сервисы работают в Linux-контейнерах,
+# и CRLF ломает shell-скрипты (/bin/sh^M: not found).
+* text=auto eol=lf
+
+# Скрипты Windows — наоборот, только CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Двоичные файлы: не трогать переводы строк и не показывать diff.
+*.pdf  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.icns binary
+*.exe  binary
+*.zip  binary
+*.docx binary
