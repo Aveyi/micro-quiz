@@ -30,14 +30,19 @@ def _build_questions(body: QuizIn) -> list[Question]:
     ]
 
 
-def _get_own_quiz(session: Session, quiz_id: int, user: CurrentUser) -> Quiz:
-    quiz = session.scalar(
+def load_quiz(session: Session, quiz_id: int) -> Quiz | None:
+    """Викторина с вопросами и вариантами; нужна и редактору, и /internal."""
+    return session.scalar(
         select(Quiz)
         .where(Quiz.id == quiz_id)
         # Подгружаем вопросы и варианты двумя запросами с IN (...),
         # а не отдельным запросом на каждый вопрос (проблема N+1).
         .options(selectinload(Quiz.questions).selectinload(Question.options))
     )
+
+
+def _get_own_quiz(session: Session, quiz_id: int, user: CurrentUser) -> Quiz:
+    quiz = load_quiz(session, quiz_id)
     # Чужая викторина отвечает так же, как несуществующая: иначе по коду
     # 403 можно было бы перебором узнать, какие id викторин существуют.
     if quiz is None or quiz.owner_id != user.id:

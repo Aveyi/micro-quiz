@@ -19,13 +19,14 @@ from app.db import make_engine
 from app.main import create_app
 
 SECRET = "test-secret-test-secret-test-sec"  # 32 байта
+INTERNAL_TOKEN = "test-internal-token"
 MIGRATION = Path(__file__).parents[2] / "deploy" / "migrations" / "0001_content_init.up.sql"
 # Порт 1 никто не слушает: для тестов без БД подключения быть не должно.
 NO_DB_URL = "postgresql+psycopg://u:p@localhost:1/db"
 
 
 def make_config(database_url: str = NO_DB_URL) -> Config:
-    return Config(port=8000, database_url=database_url, jwt_secret=SECRET)
+    return Config(port=8000, database_url=database_url, jwt_secret=SECRET, internal_token=INTERNAL_TOKEN)
 
 
 @pytest.fixture(autouse=True)

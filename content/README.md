@@ -8,14 +8,15 @@
 |---|---|
 | `app/__main__.py` | точка входа `python -m app`: конфиг, затем uvicorn |
 | `app/main.py` | `create_app`: сборка приложения, `/health` |
-| `app/config.py` | переменные окружения `PORT`, `DATABASE_URL`, `JWT_SECRET` |
+| `app/config.py` | переменные окружения `PORT`, `DATABASE_URL`, `JWT_SECRET`, `INTERNAL_TOKEN` |
 | `app/db.py` | движок SQLAlchemy и сессия на запрос |
 | `app/models.py` | таблицы схемы `content` для ORM |
 | `app/schemas.py` | JSON викторин: проверки запроса и формат ответа |
 | `app/security.py` | хэши паролей (bcrypt), выпуск и проверка JWT |
-| `app/deps.py` | зависимости ручек: сессия БД, конфиг, текущий ведущий из токена |
+| `app/deps.py` | зависимости ручек: сессия БД, конфиг, текущий ведущий из токена, проверка `X-Internal-Token` |
 | `app/routers/auth.py` | `/api/auth/register`, `/api/auth/login` |
 | `app/routers/quizzes.py` | `/api/quizzes`: список, создание, просмотр, замена, удаление |
+| `app/routers/internal.py` | `/internal/quizzes/{id}` для `live`: викторина с правильными ответами |
 | `app/errors.py` | единый формат ошибок `{"error": "..."}` |
 | `../deploy/migrations/0001_content_init.*.sql` | таблицы схемы `content` |
 
@@ -44,5 +45,5 @@ docker run --rm -v "$(pwd -W)/../deploy/migrations:/migrations" migrate/migrate:
 Затем сервис:
 
 ```bash
-DATABASE_URL=postgres://postgres:pw@localhost:5432/quiz JWT_SECRET=local-dev-secret-at-least-32-bytes .venv/Scripts/python -m app
+DATABASE_URL=postgres://postgres:pw@localhost:5432/quiz JWT_SECRET=local-dev-secret-at-least-32-bytes INTERNAL_TOKEN=local-internal-token .venv/Scripts/python -m app
 ```

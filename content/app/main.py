@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from app.config import Config
 from app.db import make_engine, make_session_factory
 from app.errors import install_error_handlers
-from app.routers import auth, quizzes
+from app.routers import auth, internal, quizzes
 
 
 def create_app(config: Config) -> FastAPI:
@@ -28,6 +28,7 @@ def create_app(config: Config) -> FastAPI:
     install_error_handlers(app)
     app.include_router(auth.router)
     app.include_router(quizzes.router)
+    app.include_router(internal.router)
 
     @app.get("/health")
     def health() -> dict[str, str]:

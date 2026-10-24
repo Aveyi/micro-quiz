@@ -93,3 +93,17 @@ class QuizOut(BaseModel):
     updated_at: UtcDatetime
     questions: list[QuestionOut]
 
+
+class InternalQuiz(BaseModel):
+    """Ответ /internal/quizzes/{id} для live (docs/quiz-design.md, раздел 5.2).
+
+    Владельца live проверяет сам по owner_id, поэтому content отдаёт
+    любую викторину, а не только викторины того, кто спрашивает.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    owner_id: int
+    title: str
+    questions: list[QuestionOut]

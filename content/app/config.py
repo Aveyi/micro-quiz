@@ -22,6 +22,8 @@ class Config:
     port: int
     database_url: str
     jwt_secret: str
+    # Общий с live секрет для /internal (заголовок X-Internal-Token).
+    internal_token: str
 
 
 def load() -> Config:
@@ -42,7 +44,16 @@ def load() -> Config:
     if secret_len < MIN_SECRET_LEN:
         raise ConfigError(f"JWT_SECRET: нужно не меньше {MIN_SECRET_LEN} байт, задано {secret_len}")
 
-    return Config(port=port, database_url=_sqlalchemy_url(database_url), jwt_secret=jwt_secret)
+    internal_token = os.environ.get("INTERNAL_TOKEN", "")
+    if not internal_token:
+        raise ConfigError("INTERNAL_TOKEN не задан")
+
+    return Config(
+        port=port,
+        database_url=_sqlalchemy_url(database_url),
+        jwt_secret=jwt_secret,
+        internal_token=internal_token,
+    )
 
 
 def _int_env(name: str, default: int) -> int:
