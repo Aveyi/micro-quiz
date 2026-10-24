@@ -93,20 +93,20 @@ def test_refresh_keeps_selection(qtbot, screen, server):
 def test_create(qtbot, window, screen):
     qtbot.mouseClick(screen.create_button, Qt.MouseButton.LeftButton)
     assert window.current_screen_name() == "editor"
-    assert "quiz_id: None" in window._screens["editor"].label.text()
+    assert window._screens["editor"].quiz_id is None
 
 
 def test_edit(window, screen):
     screen.table.selectRow(0)
     screen.edit_selected()
     assert window.current_screen_name() == "editor"
-    assert "quiz_id: 3" in window._screens["editor"].label.text()
+    assert window._screens["editor"].quiz_id == 3
 
 
 def test_double_click_edits(qtbot, window, screen):
     screen.table.selectRow(1)
     screen.table.cellDoubleClicked.emit(1, 0)
-    assert "quiz_id: 1" in window._screens["editor"].label.text()
+    assert window._screens["editor"].quiz_id == 1
 
 
 def test_history(window, screen):
