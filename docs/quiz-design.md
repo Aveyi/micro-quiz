@@ -376,6 +376,9 @@ CREATE TABLE content.quizzes (
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Список «мои викторины» выбирается по owner_id.
+CREATE INDEX quizzes_owner_id ON content.quizzes (owner_id);
+
 CREATE TABLE content.questions (
     id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     quiz_id        BIGINT NOT NULL REFERENCES content.quizzes(id) ON DELETE CASCADE,
