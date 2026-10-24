@@ -18,6 +18,7 @@
 | `app/routers/quizzes.py` | `/api/quizzes`: список, создание, просмотр, замена, удаление |
 | `app/routers/internal.py` | `/internal/quizzes/{id}` для `live`: викторина с правильными ответами |
 | `app/errors.py` | единый формат ошибок `{"error": "..."}` |
+| `Dockerfile`, `.dockerignore` | образ сервиса |
 | `../deploy/migrations/0001_content_init.*.sql` | таблицы схемы `content` |
 
 ## Запуск локально (Windows)
@@ -47,3 +48,11 @@ docker run --rm -v "$(pwd -W)/../deploy/migrations:/migrations" migrate/migrate:
 ```bash
 DATABASE_URL=postgres://postgres:pw@localhost:5432/quiz JWT_SECRET=local-dev-secret-at-least-32-bytes INTERNAL_TOKEN=local-internal-token .venv/Scripts/python -m app
 ```
+
+## Docker
+
+```bash
+docker build -t quiz-content .
+```
+
+Образ слушает `$PORT` (по умолчанию 8000), работает от пользователя с UID 10001 и сам сообщает Docker, жив ли он (`HEALTHCHECK` на `/health`). Переменные окружения те же, что и при локальном запуске. Внутри Docker-сети адрес БД — по имени контейнера, например `postgres://content_user:...@postgres:5432/quiz`.
