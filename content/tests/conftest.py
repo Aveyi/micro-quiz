@@ -9,6 +9,7 @@
 import os
 from pathlib import Path
 
+import bcrypt
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
@@ -25,6 +26,14 @@ NO_DB_URL = "postgresql+psycopg://u:p@localhost:1/db"
 
 def make_config(database_url: str = NO_DB_URL) -> Config:
     return Config(port=8000, database_url=database_url, jwt_secret=SECRET)
+
+
+@pytest.fixture(autouse=True)
+def fast_bcrypt(monkeypatch):
+    """bcrypt специально медленный (по умолчанию 2^12 раундов), а тесты
+    регистрируют пользователей десятки раз. В тестах хватает минимума, 2^4."""
+    gensalt = bcrypt.gensalt
+    monkeypatch.setattr(bcrypt, "gensalt", lambda: gensalt(rounds=4))
 
 
 @pytest.fixture(scope="session")

@@ -11,9 +11,11 @@
 | `app/config.py` | переменные окружения `PORT`, `DATABASE_URL`, `JWT_SECRET` |
 | `app/db.py` | движок SQLAlchemy и сессия на запрос |
 | `app/models.py` | таблицы схемы `content` для ORM |
+| `app/schemas.py` | JSON викторин: проверки запроса и формат ответа |
 | `app/security.py` | хэши паролей (bcrypt), выпуск и проверка JWT |
 | `app/deps.py` | зависимости ручек: сессия БД, конфиг, текущий ведущий из токена |
 | `app/routers/auth.py` | `/api/auth/register`, `/api/auth/login` |
+| `app/routers/quizzes.py` | `/api/quizzes`: список, создание, просмотр, замена, удаление |
 | `app/errors.py` | единый формат ошибок `{"error": "..."}` |
 | `../deploy/migrations/0001_content_init.*.sql` | таблицы схемы `content` |
 
