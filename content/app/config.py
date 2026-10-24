@@ -7,6 +7,12 @@ import os
 from dataclasses import dataclass
 
 
+# Минимальная длина JWT_SECRET в байтах — та же, что в live. Для HS256 ключ
+# должен быть не короче самого хэша, 256 бит (RFC 7518, раздел 3.2):
+# короткий секрет можно подобрать перебором по любому перехваченному токену.
+MIN_SECRET_LEN = 32
+
+
 class ConfigError(Exception):
     """Неверные или отсутствующие настройки."""
 
@@ -15,6 +21,7 @@ class ConfigError(Exception):
 class Config:
     port: int
     database_url: str
+    jwt_secret: str
 
 
 def load() -> Config:
@@ -28,7 +35,14 @@ def load() -> Config:
     if not database_url:
         raise ConfigError("DATABASE_URL не задан")
 
-    return Config(port=port, database_url=_sqlalchemy_url(database_url))
+    # У секрета нет значения по умолчанию: сервис с общеизвестным
+    # секретом выдавал бы токены, которые может подделать кто угодно.
+    jwt_secret = os.environ.get("JWT_SECRET", "")
+    secret_len = len(jwt_secret.encode())
+    if secret_len < MIN_SECRET_LEN:
+        raise ConfigError(f"JWT_SECRET: нужно не меньше {MIN_SECRET_LEN} байт, задано {secret_len}")
+
+    return Config(port=port, database_url=_sqlalchemy_url(database_url), jwt_secret=jwt_secret)
 
 
 def _int_env(name: str, default: int) -> int:

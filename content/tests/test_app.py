@@ -9,13 +9,13 @@ from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
 from app import config
-from app.config import Config
 from app.main import create_app
+from tests.conftest import SECRET, make_config
 
 
 @pytest.fixture
 def app():
-    app = create_app(Config(port=8000, database_url="postgresql+psycopg://u:p@localhost:1/db"))
+    app = create_app(make_config())
 
     # Тестовые ручки, чтобы вызвать каждый вид ошибки.
     class Body(BaseModel):
@@ -89,15 +89,20 @@ def test_unhandled_error_hides_details(client):
 
 def test_config_converts_postgres_url(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgres://content_user:pw@postgres:5432/quiz")
+    monkeypatch.setenv("JWT_SECRET", SECRET)
     monkeypatch.delenv("PORT", raising=False)
     cfg = config.load()
     assert cfg.port == 8000
     assert cfg.database_url == "postgresql+psycopg://content_user:pw@postgres:5432/quiz"
 
 
-@pytest.mark.parametrize("env", [{"PORT": "abc"}, {"PORT": "70000"}, {"DATABASE_URL": ""}])
+@pytest.mark.parametrize(
+    "env",
+    [{"PORT": "abc"}, {"PORT": "70000"}, {"DATABASE_URL": ""}, {"JWT_SECRET": ""}, {"JWT_SECRET": "short"}],
+)
 def test_config_errors(monkeypatch, env):
     monkeypatch.setenv("DATABASE_URL", "postgres://u:p@h/db")
+    monkeypatch.setenv("JWT_SECRET", SECRET)
     for k, v in env.items():
         monkeypatch.setenv(k, v)
     with pytest.raises(config.ConfigError):
