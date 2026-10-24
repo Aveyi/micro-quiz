@@ -16,6 +16,7 @@
 | `quiz_desktop/screens/history.py` | история игр: список игр ведущего и результаты выбранной (места, очки, статистика по вопросам с текстами из `content`) |
 | `quiz_desktop/settings.py` | адрес сервера и имя последнего ведущего, сохраняются между запусками (QSettings); пароль и токен не сохраняются |
 | `quiz_desktop/settings_dialog.py` | диалог «Настройки сервера» с проверкой соединения |
+| `run_desktop.py`, `quiz_desktop.spec` | точка входа и настройки сборки `.exe` (PyInstaller) |
 | `quiz_desktop/api.py` | асинхронный REST-клиент `ApiClient` |
 | `quiz_desktop/live_client.py` | WebSocket-клиент `LiveClient` к `live` для экранов игры: конверт `{"type", "data"}`, понятные тексты ошибок подключения и кодов закрытия |
 
@@ -68,3 +69,15 @@ QUIZ_LIVE_URL=http://localhost:8080 .venv/Scripts/python -m quiz_desktop
 ```bash
 .venv/Scripts/python -m pytest
 ```
+
+## Сборка .exe (только Windows)
+
+PyInstaller собирает программу только под ту ОС, на которой запущен, поэтому `.exe` собирается на Windows.
+
+```bash
+.venv/Scripts/python -m PyInstaller quiz_desktop.spec --noconfirm
+```
+
+Сборка идёт около полутора минут. Результат — один файл `dist/QuizDesktop.exe` (около 48 МБ), Python на компьютере пользователя не нужен. Внутри Qt (включая QtWebSockets для экранов игры) и только русские переводы Qt. При запуске файл пару секунд распаковывается во временную папку, поэтому окно появляется не мгновенно.
+
+Папки `build/` и `dist/` в git не попадают. Адрес сервера при первом запуске — `http://localhost:8000`, поменять его можно в «Приложение → Настройки сервера…».
