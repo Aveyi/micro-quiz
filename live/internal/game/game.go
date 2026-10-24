@@ -198,7 +198,36 @@ func (r *Room) finishQuestion() {
 		mine.You = &questionYou{Correct: a.correct, Points: a.points, Score: p.client.score, Rank: p.rank}
 		r.sendTo(p.client, encode("question_result", mine))
 	}
+	r.saveAnswers(q.ID)
 	r.log.Info("вопрос завершён", "question_index", r.qIndex, "answered", len(r.answers), "players", len(r.players))
+}
+
+// saveAnswers пишет ответы на вопрос пакетом: всех ответивших (в том
+// числе выбывших после ответа) и пустые строки для оставшихся без ответа.
+func (r *Room) saveAnswers(questionID int64) {
+	rows := make([]session.Answer, 0, len(r.players)+len(r.answers))
+	row := func(c *Client, a answer) session.Answer {
+		return session.Answer{
+			PlayerID:      c.playerID,
+			QuestionIndex: r.qIndex,
+			QuestionID:    questionID,
+			OptionID:      a.optionID,
+			IsCorrect:     a.correct,
+			ResponseMs:    int(a.elapsed.Milliseconds()),
+			Points:        a.points,
+		}
+	}
+	for c, a := range r.answers {
+		rows = append(rows, row(c, a))
+	}
+	for _, p := range r.players {
+		if _, ok := r.answers[p]; !ok {
+			rows = append(rows, row(p, answer{})) // optionID 0 → NULL «не ответил»
+		}
+	}
+	r.storeCall("запись ответов", func(ctx context.Context) error {
+		return r.store.SaveAnswers(ctx, r.sess.ID, rows)
+	})
 }
 
 // handleNext — ведущий переходит к следующему вопросу или к итогам.
@@ -237,7 +266,13 @@ func (r *Room) finishGame() {
 		}))
 	}
 
-	r.setStatus(session.StatusFinished)
+	results := make([]session.Result, 0, len(rs))
+	for _, p := range rs {
+		results = append(results, session.Result{PlayerID: p.client.playerID, Score: p.client.score, Rank: p.rank})
+	}
+	r.storeCall("итоги игры", func(ctx context.Context) error {
+		return r.store.Finish(ctx, r.sess.ID, results)
+	})
 	for c := range r.clients {
 		r.disconnect(c, websocket.CloseNormalClosure, "game over")
 	}
@@ -246,12 +281,27 @@ func (r *Room) finishGame() {
 	r.log.Info("игра завершена", "players", len(r.players), "left", len(r.left))
 }
 
-// setStatus обновляет статус сессии. Ошибку только логируем: игра в
-// памяти идёт дальше, даже если хранилище на миг недоступно.
-func (r *Room) setStatus(s session.Status) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+// dbTimeout — сколько ждём БД. Все вызовы идут из горутины комнаты, и
+// пока она ждёт, комната не обрабатывает сообщения. Поэтому срок короткий.
+const dbTimeout = 5 * time.Second
+
+func dbContext() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), dbTimeout)
+}
+
+// storeCall вызывает хранилище с таймаутом. Ошибку только логируем: игра
+// в памяти идёт дальше, даже если БД на миг недоступна, — пострадает
+// история, но не сами игроки.
+func (r *Room) storeCall(what string, f func(ctx context.Context) error) {
+	ctx, cancel := dbContext()
 	defer cancel()
-	if err := r.store.SetStatus(ctx, r.sess.ID, s); err != nil {
-		r.log.Error("не удалось обновить статус сессии", "status", s, "err", err)
+	if err := f(ctx); err != nil {
+		r.log.Error("ошибка БД: "+what, "err", err)
 	}
+}
+
+func (r *Room) setStatus(s session.Status) {
+	r.storeCall("статус сессии "+string(s), func(ctx context.Context) error {
+		return r.store.SetStatus(ctx, r.sess.ID, s)
+	})
 }

@@ -14,6 +14,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/Aveyi/micro-quiz/live/internal/api"
 	"github.com/Aveyi/micro-quiz/live/internal/auth"
 	"github.com/Aveyi/micro-quiz/live/internal/config"
@@ -48,9 +50,17 @@ func run(log *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	db, err := connectDB(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return err
+	}
+	// Закрываем пул последним: при остановке комнаты ещё пишут в БД
+	// статус cancelled. defer выполняются в обратном порядке.
+	defer db.Close()
+
 	verifier := auth.NewVerifier(cfg.JWTSecret)
 	quizzes := content.NewClient(cfg.ContentURL, cfg.InternalToken)
-	store := session.NewMemoryStore()
+	store := session.NewPostgresStore(db)
 
 	rooms := &api.Rooms{
 		Auth:    verifier,
@@ -59,6 +69,7 @@ func run(log *slog.Logger) error {
 		Log:     log,
 		NewCode: session.NewCode,
 	}
+	history := &api.Games{Auth: verifier, Store: store, Log: log}
 	games := game.NewManager(quizzes, store, log, game.DefaultTimeouts)
 	ws := &api.WS{
 		Auth:  verifier,
@@ -71,6 +82,8 @@ func run(log *slog.Logger) error {
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.HandleFunc("POST /live/api/rooms", rooms.Create)
 	mux.HandleFunc("GET /live/ws", ws.Connect)
+	mux.HandleFunc("GET /live/api/games", history.List)
+	mux.HandleFunc("GET /live/api/games/{id}", history.Get)
 
 	srv := &http.Server{
 		Addr:    ":" + strconv.Itoa(cfg.Port),
@@ -115,6 +128,23 @@ func run(log *slog.Logger) error {
 	}
 	log.Info("сервис остановлен")
 	return nil
+}
+
+// connectDB создаёт пул соединений и сразу проверяет, что БД доступна:
+// pgxpool.New соединений не открывает, и без Ping ошибка в адресе или
+// пароле всплыла бы только на первом запросе ведущего.
+func connectDB(ctx context.Context, url string) (*pgxpool.Pool, error) {
+	db, err := pgxpool.New(ctx, url)
+	if err != nil {
+		return nil, fmt.Errorf("DATABASE_URL: %w", err)
+	}
+	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	if err := db.Ping(pingCtx); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("подключение к БД: %w", err)
+	}
+	return db, nil
 }
 
 // handleHealth нужен Docker (HEALTHCHECK) и nginx: отвечает, что процесс жив.

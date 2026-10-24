@@ -30,6 +30,8 @@ var (
 	ErrNotFound = errors.New("сессия не найдена")
 	// ErrCodeTaken — код уже занят активной комнатой; нужно взять другой.
 	ErrCodeTaken = errors.New("код комнаты занят")
+	// ErrNicknameTaken — ник уже есть в сессии (без учёта регистра).
+	ErrNicknameTaken = errors.New("ник уже занят")
 )
 
 type Session struct {
@@ -40,6 +42,8 @@ type Session struct {
 	HostUserID int64
 	Status     Status
 	CreatedAt  time.Time
+	StartedAt  *time.Time // nil — игра не начиналась
+	FinishedAt *time.Time // nil — ещё не закончилась
 }
 
 // Store — где хранятся сессии. Сейчас в памяти, на шаге с БД появится
@@ -55,6 +59,45 @@ type Store interface {
 	// GetActive ищет активную сессию по коду. Нет такой — ErrNotFound.
 	GetActive(ctx context.Context, code string) (Session, error)
 	SetStatus(ctx context.Context, id int64, status Status) error
+
+	// AddPlayer записывает вошедшего игрока и возвращает его id — это и
+	// есть player_id в протоколе. Ник занят — ErrNicknameTaken.
+	AddPlayer(ctx context.Context, sessionID int64, nickname string) (int64, error)
+	// RemovePlayer удаляет игрока, ушедшего из лобби: он не играл, и его
+	// ник должен освободиться для других.
+	RemovePlayer(ctx context.Context, playerID int64) error
+	// MarkLeft отмечает игрока, выбывшего во время игры. Запись остаётся:
+	// его ответы и очки — часть истории.
+	MarkLeft(ctx context.Context, playerID int64) error
+	// SaveAnswers записывает ответы на один вопрос одной транзакцией.
+	SaveAnswers(ctx context.Context, sessionID int64, answers []Answer) error
+	// Finish записывает итоговые очки и места и ставит статус finished —
+	// тоже одной транзакцией, чтобы не было «завершённой игры без итогов».
+	Finish(ctx context.Context, sessionID int64, results []Result) error
+
+	// ListGames — игры ведущего, новые сверху, не больше limit.
+	ListGames(ctx context.Context, hostUserID int64, limit int) ([]GameSummary, error)
+	// GetGame — результаты одной игры. Нет такой — ErrNotFound.
+	// Владельца проверяет вызывающий: он знает, кто спрашивает.
+	GetGame(ctx context.Context, id int64) (GameDetails, error)
+}
+
+// Answer — ответ игрока на вопрос (строка live.player_answers).
+type Answer struct {
+	PlayerID      int64
+	QuestionIndex int
+	QuestionID    int64
+	OptionID      int64 // 0 — не успел ответить (в БД NULL)
+	IsCorrect     bool
+	ResponseMs    int // при OptionID == 0 не используется (в БД NULL)
+	Points        int
+}
+
+// Result — итог игрока после последнего вопроса.
+type Result struct {
+	PlayerID int64
+	Score    int
+	Rank     int
 }
 
 // NewCode возвращает случайный код из 6 цифр, например "048213".

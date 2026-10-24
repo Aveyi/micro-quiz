@@ -50,13 +50,12 @@ type Room struct {
 	done chan struct{}
 
 	// Состояние: только для горутины run.
-	phase        phase
-	host         *Client
-	clients      map[*Client]bool // все подключённые, включая ведущего
-	players      []*Client        // вошедшие через join и ещё не выбывшие, в порядке входа
-	left         []*Client        // выбыли во время игры: их очки нужны для истории
-	nextPlayerID int64
-	closed       bool // комната завершена, run должен выйти
+	phase   phase
+	host    *Client
+	clients map[*Client]bool // все подключённые, включая ведущего
+	players []*Client        // вошедшие через join и ещё не выбывшие, в порядке входа
+	left    []*Client        // выбыли во время игры: их очки нужны для истории
+	closed  bool             // комната завершена, run должен выйти
 
 	// Текущий вопрос.
 	qIndex   int

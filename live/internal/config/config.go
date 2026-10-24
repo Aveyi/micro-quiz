@@ -22,6 +22,8 @@ type Config struct {
 	ContentURL string
 	// InternalToken — общий с content секрет для /internal (заголовок X-Internal-Token).
 	InternalToken string
+	// DatabaseURL — строка подключения к PostgreSQL под пользователем live_user.
+	DatabaseURL string
 }
 
 // Load собирает конфиг и сразу проверяет его: лучше упасть при старте
@@ -55,7 +57,13 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("INTERNAL_TOKEN: не задан")
 	}
 
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		return Config{}, fmt.Errorf("DATABASE_URL: не задан")
+	}
+
 	return Config{
+		DatabaseURL:   databaseURL,
 		Port:          port,
 		JWTSecret:     []byte(secret),
 		ContentURL:    strings.TrimRight(contentURL, "/"),

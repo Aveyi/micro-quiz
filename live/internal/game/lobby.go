@@ -1,13 +1,17 @@
 package game
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 	"unicode"
 	"unicode/utf8"
 
 	"github.com/gorilla/websocket"
+
+	"github.com/Aveyi/micro-quiz/live/internal/session"
 )
 
 const (
@@ -60,8 +64,23 @@ func (r *Room) handleJoin(c *Client, raw json.RawMessage) {
 		}
 	}
 
-	r.nextPlayerID++
-	c.playerID, c.nickname = r.nextPlayerID, nick
+	// player_id выдаёт БД: это id строки в live.session_players.
+	ctx, cancel := dbContext()
+	id, err := r.store.AddPlayer(ctx, r.sess.ID, nick)
+	cancel()
+	switch {
+	case errors.Is(err, session.ErrNicknameTaken):
+		// Сюда попадаем, только если правила сравнения в Go и в БД
+		// разошлись (lower() и EqualFold для редких символов). Индекс в
+		// БД — последняя линия защиты.
+		r.sendTo(c, errorMsg("nickname_taken", "ник уже занят"))
+		return
+	case err != nil:
+		r.log.Error("не удалось записать игрока", "nickname", nick, "err", err)
+		r.sendTo(c, errorMsg("server_error", "временная ошибка сервера, попробуйте ещё раз"))
+		return
+	}
+	c.playerID, c.nickname = id, nick
 	r.players = append(r.players, c)
 	r.log.Info("игрок вошёл", "player_id", c.playerID, "nickname", nick, "players", len(r.players))
 
@@ -135,6 +154,11 @@ func (r *Room) removeGonePlayers() {
 		if r.phase == phaseLobby {
 			for _, p := range gone {
 				r.log.Info("игрок вышел", "player_id", p.playerID, "nickname", p.nickname)
+				// Из лобби удаляем совсем: он не играл, а его ник должен
+				// освободиться (в БД ник уникален в сессии).
+				r.storeCall("удаление игрока", func(ctx context.Context) error {
+					return r.store.RemovePlayer(ctx, p.playerID)
+				})
 			}
 			r.broadcastMembers(encode("lobby_update", lobbyUpdateData{Players: r.playerList()}))
 			continue
@@ -144,6 +168,9 @@ func (r *Room) removeGonePlayers() {
 		r.left = append(r.left, gone...)
 		for _, p := range gone {
 			p.left = true
+			r.storeCall("отметка выбывшего", func(ctx context.Context) error {
+				return r.store.MarkLeft(ctx, p.playerID)
+			})
 			r.log.Info("игрок выбыл", "player_id", p.playerID, "nickname", p.nickname, "score", p.score)
 			r.broadcastMembers(encode("player_left", playerLeftData{PlayerID: p.playerID, Nickname: p.nickname}))
 		}
