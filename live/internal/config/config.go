@@ -4,8 +4,10 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // minSecretLen — минимальная длина JWT_SECRET в байтах. Для HS256 ключ
@@ -16,6 +18,10 @@ const minSecretLen = 32
 type Config struct {
 	Port      int
 	JWTSecret []byte
+	// ContentURL — адрес сервиса content внутри Docker-сети, без завершающего "/".
+	ContentURL string
+	// InternalToken — общий с content секрет для /internal (заголовок X-Internal-Token).
+	InternalToken string
 }
 
 // Load собирает конфиг и сразу проверяет его: лучше упасть при старте
@@ -36,7 +42,25 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("JWT_SECRET: нужно не меньше %d байт, задано %d", minSecretLen, len(secret))
 	}
 
-	return Config{Port: port, JWTSecret: []byte(secret)}, nil
+	contentURL := os.Getenv("CONTENT_URL")
+	if contentURL == "" {
+		contentURL = "http://content:8000"
+	}
+	if u, err := url.Parse(contentURL); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return Config{}, fmt.Errorf("CONTENT_URL: %q не похож на http(s)://хост[:порт]", contentURL)
+	}
+
+	internalToken := os.Getenv("INTERNAL_TOKEN")
+	if internalToken == "" {
+		return Config{}, fmt.Errorf("INTERNAL_TOKEN: не задан")
+	}
+
+	return Config{
+		Port:          port,
+		JWTSecret:     []byte(secret),
+		ContentURL:    strings.TrimRight(contentURL, "/"),
+		InternalToken: internalToken,
+	}, nil
 }
 
 // intEnv возвращает число из переменной name или def, если переменная не задана.

@@ -1,0 +1,65 @@
+[
+  {
+    "id": 1,
+    "owner_id": 1,
+    "title": "Столицы мира",
+    "questions": [
+      {
+        "id": 11,
+        "position": 0,
+        "text": "Столица Австралии?",
+        "time_limit_sec": 20,
+        "options": [
+          {"id": 101, "position": 0, "text": "Сидней", "is_correct": false},
+          {"id": 102, "position": 1, "text": "Канберра", "is_correct": true},
+          {"id": 103, "position": 2, "text": "Мельбурн", "is_correct": false}
+        ]
+      },
+      {
+        "id": 12,
+        "position": 1,
+        "text": "Столица Канады?",
+        "time_limit_sec": 10,
+        "options": [
+          {"id": 104, "position": 0, "text": "Оттава", "is_correct": true},
+          {"id": 105, "position": 1, "text": "Торонто", "is_correct": false}
+        ]
+      },
+      {
+        "id": 13,
+        "position": 2,
+        "text": "Столица Бразилии?",
+        "time_limit_sec": 5,
+        "options": [
+          {"id": 106, "position": 0, "text": "Рио-де-Жанейро", "is_correct": false},
+          {"id": 107, "position": 1, "text": "Сан-Паулу", "is_correct": false},
+          {"id": 108, "position": 2, "text": "Бразилиа", "is_correct": true},
+          {"id": 109, "position": 3, "text": "Сальвадор", "is_correct": false}
+        ]
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "owner_id": 2,
+    "title": "Чужая викторина (владелец — пользователь 2)",
+    "questions": [
+      {
+        "id": 21,
+        "position": 0,
+        "text": "2 + 2?",
+        "time_limit_sec": 5,
+        "options": [
+          {"id": 201, "position": 0, "text": "4", "is_correct": true},
+          {"id": 202, "position": 1, "text": "5", "is_correct": false}
+        ]
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "owner_id": 1,
+    "title": "Пустая викторина (нет вопросов)",
+    "questions": []
+  }
+]
