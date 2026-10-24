@@ -4,6 +4,8 @@ from PySide6.QtWidgets import QLabel, QMainWindow, QStackedWidget
 
 from quiz_desktop.api import ApiClient
 from quiz_desktop.screens.base import PlaceholderScreen, Screen
+from quiz_desktop.screens.host import HostScreen
+from quiz_desktop.screens.player import PlayerScreen
 from quiz_desktop.screens.start import StartScreen
 from quiz_desktop.settings import AppSettings
 from quiz_desktop.settings_dialog import SettingsDialog
@@ -27,7 +29,9 @@ class MainWindow(QMainWindow):
         # Заглушки, пока экраны не готовы. Разделение — docs/quiz-design.md, раздел 10:
         # вход, викторины, редактор, история — участник 2; экраны игры — участник 1.
         self.add_screen("login", PlaceholderScreen(self, "Вход ведущего"))
-        self.add_screen("join", PlaceholderScreen(self, "Вход игрока в комнату"))
+        self.add_screen("join", PlayerScreen(self))
+        # Экран игры ведущего: открывается из списка викторин с quiz_id.
+        self.add_screen("host_game", HostScreen(self))
 
         self._build_menu()
         self._server_label = QLabel()

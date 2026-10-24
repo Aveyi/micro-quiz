@@ -10,7 +10,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest  # noqa: E402
-from PySide6.QtCore import QSettings  # noqa: E402
+from PySide6.QtCore import QObject, QSettings  # noqa: E402
+from PySide6.QtNetwork import QAbstractSocket, QHostAddress  # noqa: E402
+from PySide6.QtWebSockets import QWebSocket, QWebSocketServer  # noqa: E402
 
 from quiz_desktop.settings import AppSettings  # noqa: E402
 
@@ -76,3 +78,45 @@ def free_url():
     port = srv.server_address[1]
     srv.server_close()
     return f"http://127.0.0.1:{port}"
+
+
+class FakeLive(QObject):
+    """Поддельный live: принимает WebSocket-подключения, запоминает, что
+    пришло, и по команде теста шлёт сообщения или закрывает соединение."""
+
+    def __init__(self):
+        super().__init__()
+        self.server = QWebSocketServer("fake-live", QWebSocketServer.SslMode.NonSecureMode, self)
+        assert self.server.listen(QHostAddress.SpecialAddress.LocalHost, 0)
+        self.url = f"http://127.0.0.1:{self.server.serverPort()}"
+        self.sockets: list[QWebSocket] = []
+        self.requests = []  # QNetworkRequest рукопожатия: адрес и заголовки
+        self.received = []  # разобранные JSON-сообщения от клиентов
+        self.server.newConnection.connect(self._accept)
+
+    def _accept(self):
+        sock = self.server.nextPendingConnection()
+        self.sockets.append(sock)
+        self.requests.append(sock.request())
+        sock.textMessageReceived.connect(lambda text: self.received.append(json.loads(text)))
+
+    def send(self, text):
+        self.sockets[-1].sendTextMessage(text)
+
+    def send_msg(self, type_, data=None):
+        self.send(json.dumps({"type": type_, "data": data or {}}, ensure_ascii=False))
+
+    def close(self, code, reason=""):
+        self.sockets[-1].close(code, reason)
+
+    def is_disconnected(self):
+        return self.sockets[-1].state() == QAbstractSocket.SocketState.UnconnectedState
+
+
+@pytest.fixture
+def live(qtbot, monkeypatch):
+    # Адрес live берётся из адреса сервера, а не из окружения разработчика.
+    monkeypatch.delenv("QUIZ_LIVE_URL", raising=False)
+    fake = FakeLive()
+    yield fake
+    fake.server.close()

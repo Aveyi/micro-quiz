@@ -13,6 +13,7 @@
 | `quiz_desktop/settings.py` | адрес сервера, сохраняется между запусками (QSettings) |
 | `quiz_desktop/settings_dialog.py` | диалог «Настройки сервера» с проверкой соединения |
 | `quiz_desktop/api.py` | асинхронный REST-клиент `ApiClient` |
+| `quiz_desktop/live_client.py` | WebSocket-клиент `LiveClient` к `live` для экранов игры: конверт `{"type", "data"}`, понятные тексты ошибок подключения и кодов закрытия |
 
 ## Как добавить экран
 
@@ -36,6 +37,12 @@ reply.failed.connect(self.show_error)       # ApiError: status (0 — нет с�
 python -m venv .venv
 .venv/Scripts/python -m pip install -r requirements-dev.txt
 .venv/Scripts/python -m quiz_desktop
+```
+
+Без nginx `live` работает на своём порту, а адрес сервера в настройках указывает на `content`. Тогда адрес `live` для экранов игры задаётся переменной окружения (только для разработки):
+
+```bash
+QUIZ_LIVE_URL=http://localhost:8080 .venv/Scripts/python -m quiz_desktop
 ```
 
 Тесты (окна не показываются на экране, сервер не нужен):
