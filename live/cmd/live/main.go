@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -13,7 +14,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Aveyi/micro-quiz/live/internal/api"
+	"github.com/Aveyi/micro-quiz/live/internal/auth"
 	"github.com/Aveyi/micro-quiz/live/internal/config"
+	"github.com/Aveyi/micro-quiz/live/internal/content"
+	"github.com/Aveyi/micro-quiz/live/internal/game"
+	"github.com/Aveyi/micro-quiz/live/internal/session"
 )
 
 // shutdownTimeout — сколько ждём завершения активных запросов при остановке.
@@ -42,8 +48,29 @@ func run(log *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	verifier := auth.NewVerifier(cfg.JWTSecret)
+	quizzes := content.NewClient(cfg.ContentURL, cfg.InternalToken)
+	store := session.NewMemoryStore()
+
+	rooms := &api.Rooms{
+		Auth:    verifier,
+		Quizzes: quizzes,
+		Store:   store,
+		Log:     log,
+		NewCode: session.NewCode,
+	}
+	games := game.NewManager(quizzes, store, log, game.DefaultTimeouts)
+	ws := &api.WS{
+		Auth:  verifier,
+		Store: store,
+		Rooms: games,
+		Log:   log,
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", handleHealth)
+	mux.HandleFunc("POST /live/api/rooms", rooms.Create)
+	mux.HandleFunc("GET /live/ws", ws.Connect)
 
 	srv := &http.Server{
 		Addr:    ":" + strconv.Itoa(cfg.Port),
@@ -76,6 +103,11 @@ func run(log *slog.Logger) error {
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		return err
+	}
+	// Сначала HTTP-сервер перестал принимать подключения, потом закрываем
+	// комнаты: иначе в закрытую комнату успел бы зайти новый игрок.
+	if err := games.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("закрытие комнат: %w", err)
 	}
 	// После Shutdown ListenAndServe возвращает http.ErrServerClosed — это норма.
 	if err := <-errCh; !errors.Is(err, http.ErrServerClosed) {
