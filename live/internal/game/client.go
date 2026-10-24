@@ -51,6 +51,8 @@ type Client struct {
 	connectedAt time.Time
 	playerID    int64 // 0 — ещё не вошёл через join
 	nickname    string
+	score       int
+	left        bool // выбыл во время игры
 }
 
 func newClient(conn *websocket.Conn, room *Room, role Role) *Client {

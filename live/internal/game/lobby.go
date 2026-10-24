@@ -117,21 +117,42 @@ func (r *Room) playerList() []playerInfo {
 func (r *Room) removeGonePlayers() {
 	for {
 		kept := make([]*Client, 0, len(r.players))
+		var gone []*Client
 		for _, p := range r.players {
 			if r.clients[p] {
 				kept = append(kept, p)
 			} else {
-				r.log.Info("игрок вышел", "player_id", p.playerID, "nickname", p.nickname)
+				gone = append(gone, p)
 			}
 		}
-		if len(kept) == len(r.players) {
+		if len(gone) == 0 {
 			return
 		}
 		r.players = kept
+
+		// Рассылки ниже могут отключить ещё кого-то медленного — тогда
+		// цикл пройдёт ещё раз.
 		if r.phase == phaseLobby {
-			// Рассылка может отключить ещё кого-то медленного — тогда
-			// цикл пройдёт ещё раз.
+			for _, p := range gone {
+				r.log.Info("игрок вышел", "player_id", p.playerID, "nickname", p.nickname)
+			}
 			r.broadcastMembers(encode("lobby_update", lobbyUpdateData{Players: r.playerList()}))
+			continue
+		}
+
+		// Во время игры выбывший не может вернуться, но его очки остаются.
+		r.left = append(r.left, gone...)
+		for _, p := range gone {
+			p.left = true
+			r.log.Info("игрок выбыл", "player_id", p.playerID, "nickname", p.nickname, "score", p.score)
+			r.broadcastMembers(encode("player_left", playerLeftData{PlayerID: p.playerID, Nickname: p.nickname}))
+		}
+		if r.phase == phaseQuestion {
+			r.sendProgress()
+			// Может оказаться, что все оставшиеся уже ответили.
+			if r.allAnswered() {
+				r.finishQuestion()
+			}
 		}
 	}
 }

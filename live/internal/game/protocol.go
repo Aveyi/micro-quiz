@@ -57,3 +57,76 @@ type errorData struct {
 func errorMsg(code, message string) []byte {
 	return encode("error", errorData{Code: code, Message: message})
 }
+
+// Сообщения игры (шаг 5).
+
+type answerData struct {
+	// Указатель, чтобы отличить «нет поля» от вопроса номер 0.
+	QuestionIndex *int  `json:"question_index"`
+	OptionID      int64 `json:"option_id"`
+}
+
+type optionData struct {
+	OptionID int64  `json:"option_id"`
+	Text     string `json:"text"`
+}
+
+// questionData — без правильного ответа: он уходит только в question_result.
+type questionData struct {
+	QuestionIndex int          `json:"question_index"`
+	QuestionCount int          `json:"question_count"`
+	Text          string       `json:"text"`
+	Options       []optionData `json:"options"`
+	TimeLimitSec  int          `json:"time_limit_sec"`
+}
+
+type answerAcceptedData struct {
+	QuestionIndex int `json:"question_index"`
+}
+
+type answerProgressData struct {
+	Answered int `json:"answered"`
+	Total    int `json:"total"`
+}
+
+type leaderEntry struct {
+	Rank     int    `json:"rank"`
+	PlayerID int64  `json:"player_id"`
+	Nickname string `json:"nickname"`
+	Score    int    `json:"score"`
+	// Left — игрок выбыл во время игры. Бывает только в game_over;
+	// у оставшихся поля нет (omitempty убирает false).
+	Left bool `json:"left,omitempty"`
+}
+
+type questionYou struct {
+	Correct bool `json:"correct"`
+	Points  int  `json:"points"`
+	Score   int  `json:"score"`
+	Rank    int  `json:"rank"`
+}
+
+// questionResultData: You есть только у игроков, OptionCounts — только у
+// ведущего. omitempty у указателя и map убирает поле, если оно nil.
+type questionResultData struct {
+	QuestionIndex   int            `json:"question_index"`
+	CorrectOptionID int64          `json:"correct_option_id"`
+	Leaderboard     []leaderEntry  `json:"leaderboard"`
+	You             *questionYou   `json:"you,omitempty"`
+	OptionCounts    map[string]int `json:"option_counts,omitempty"`
+}
+
+type playerLeftData struct {
+	PlayerID int64  `json:"player_id"`
+	Nickname string `json:"nickname"`
+}
+
+type gameOverYou struct {
+	Score int `json:"score"`
+	Rank  int `json:"rank"`
+}
+
+type gameOverData struct {
+	Leaderboard []leaderEntry `json:"leaderboard"`
+	You         *gameOverYou  `json:"you,omitempty"`
+}

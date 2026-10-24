@@ -1,7 +1,6 @@
 package game
 
 import (
-	"context"
 	"encoding/json"
 	"log/slog"
 	"time"
@@ -13,11 +12,14 @@ import (
 )
 
 // phase — состояние комнаты (docs/quiz-design.md, раздел 4.5).
-// Пока есть только лобби; фазы игры появятся на шаге 5.
+// finished и cancelled отдельной фазой не нужны: в этот момент комната
+// закрывается и её горутина завершается.
 type phase int
 
 const (
-	phaseLobby phase = iota
+	phaseLobby    phase = iota
+	phaseQuestion       // идёт вопрос, принимаем ответы
+	phaseResult         // вопрос закончился, ждём next от ведущего
 )
 
 type inbound struct {
@@ -51,8 +53,17 @@ type Room struct {
 	phase        phase
 	host         *Client
 	clients      map[*Client]bool // все подключённые, включая ведущего
-	players      []*Client        // вошедшие через join, в порядке входа
+	players      []*Client        // вошедшие через join и ещё не выбывшие, в порядке входа
+	left         []*Client        // выбыли во время игры: их очки нужны для истории
 	nextPlayerID int64
+	closed       bool // комната завершена, run должен выйти
+
+	// Текущий вопрос.
+	qIndex   int
+	qStarted time.Time
+	qLimit   time.Duration
+	qTimer   *time.Timer
+	answers  map[*Client]answer
 }
 
 func newRoom(sess session.Session, quiz content.Quiz, store session.Store, log *slog.Logger, t Timeouts) *Room {
@@ -132,28 +143,41 @@ func (r *Room) run() {
 			r.handle(in)
 		case now := <-sweep.C:
 			r.dropSilent(now)
+		case <-r.questionTimeout():
+			r.finishQuestion()
 		case <-hostWait.C:
 			if r.host == nil {
 				r.closeRoom("host_left")
-				return
 			}
 		case <-lobby.C:
 			if r.phase == phaseLobby {
 				r.closeRoom("lobby_timeout")
-				return
 			}
 		case <-r.quit:
 			r.closeRoom("server_shutdown")
-			return
 		}
 
 		// Ведущий ушёл — сам или его отключили как медленного.
-		if r.host != nil && !r.clients[r.host] {
+		if !r.closed && r.host != nil && !r.clients[r.host] {
 			r.closeRoom("host_left")
+		}
+		if !r.closed {
+			r.removeGonePlayers()
+		}
+		if r.closed {
 			return
 		}
-		r.removeGonePlayers()
 	}
+}
+
+// questionTimeout — канал таймера текущего вопроса или nil, если вопроса
+// нет. Чтение из nil-канала блокируется навсегда, поэтому в select эта
+// ветка просто «выключена», пока таймер не нужен. Частый приём в Go.
+func (r *Room) questionTimeout() <-chan time.Time {
+	if r.qTimer == nil {
+		return nil
+	}
+	return r.qTimer.C
 }
 
 func (r *Room) add(c *Client) {
@@ -191,7 +215,12 @@ func (r *Room) handle(in inbound) {
 	switch env.Type {
 	case "join":
 		r.handleJoin(in.client, env.Data)
-	// start, answer и next появятся на шаге 5.
+	case "start":
+		r.handleStart(in.client)
+	case "answer":
+		r.handleAnswer(in.client, env.Data)
+	case "next":
+		r.handleNext(in.client)
 	default:
 		// Неизвестные type по протоколу молча игнорируем: так новые
 		// сообщения не ломают старые серверы и клиенты.
@@ -258,11 +287,9 @@ func (r *Room) closeRoom(reason string) {
 		r.disconnect(c, code, reason)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := r.store.SetStatus(ctx, r.sess.ID, session.StatusCancelled); err != nil {
-		r.log.Error("не удалось отметить сессию отменённой", "err", err)
-	}
+	r.setStatus(session.StatusCancelled)
+	r.stopQuestionTimer()
+	r.closed = true
 	r.onClose()
 	r.log.Info("комната закрыта", "reason", reason)
 }

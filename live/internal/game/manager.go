@@ -31,12 +31,17 @@ type Timeouts struct {
 	Lobby time.Duration
 	// Join — сколько игрок может быть подключён, не прислав join.
 	Join time.Duration
+	// QuestionSecond — длина одной «секунды» таймера вопроса. В работе это
+	// секунда; тесты ставят миллисекунды, чтобы вопрос на 20 с шёл 0,4 с.
+	// Очки считаются от доли времени, поэтому от масштаба не зависят.
+	QuestionSecond time.Duration
 }
 
 var DefaultTimeouts = Timeouts{
-	HostWait: 10 * time.Second,
-	Lobby:    30 * time.Minute,
-	Join:     30 * time.Second,
+	HostWait:       10 * time.Second,
+	Lobby:          30 * time.Minute,
+	Join:           30 * time.Second,
+	QuestionSecond: time.Second,
 }
 
 type QuizSource interface {
@@ -60,6 +65,9 @@ type Manager struct {
 }
 
 func NewManager(quizzes QuizSource, store session.Store, log *slog.Logger, t Timeouts) *Manager {
+	if t.QuestionSecond == 0 {
+		t.QuestionSecond = time.Second
+	}
 	return &Manager{quizzes: quizzes, store: store, log: log, timeouts: t, rooms: make(map[string]*Room)}
 }
 

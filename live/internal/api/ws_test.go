@@ -20,7 +20,16 @@ import (
 )
 
 var wsQuizzes = fakeQuizzes{quizzes: map[int64]content.Quiz{
-	3: {ID: 3, OwnerID: 1, Title: "Столицы мира", Questions: make([]content.Question, 2)},
+	3: {ID: 3, OwnerID: 1, Title: "Столицы мира", Questions: []content.Question{
+		{ID: 41, Text: "Столица Австралии?", TimeLimitSec: 20, Options: []content.Option{
+			{ID: 17, Text: "Сидней"},
+			{ID: 18, Text: "Канберра", IsCorrect: true},
+		}},
+		{ID: 42, Text: "Столица Канады?", TimeLimitSec: 20, Options: []content.Option{
+			{ID: 19, Text: "Оттава", IsCorrect: true},
+			{ID: 20, Text: "Торонто"},
+		}},
+	}},
 }}
 
 // wsEnv — настоящий HTTP-сервер с ручкой /live/ws; тесты подключаются
