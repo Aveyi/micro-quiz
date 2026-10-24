@@ -1,0 +1,5 @@
+# Только нужные части Qt. Полный пакет PySide6 тянет ещё WebEngine и Pdf
+# (сотни мегабайт), и всё это попало бы в .exe.
+# Essentials: QtWidgets, QtNetwork. Addons: QtWebSockets для экранов игры.
+PySide6-Essentials==6.12.0
+PySide6-Addons==6.12.0
