@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: quiz
+      POSTGRES_PASSWORD: ${ROOT_PASSWORD:?задайте в deploy/.env (образец в .env.example)}
+      LIVE_PASSWORD: ${LIVE_PASSWORD:?задайте в deploy/.env (образец в .env.example)}
+      CONTENT_PASSWORD: ${CONTENT_PASSWORD:?задайте в deploy/.env (образец в .env.example)}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./postgres/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+  migrate:
+    image: migrate/migrate:v4.18.3
+    volumes:
+      - ./migrations:/migrations:ro
+    command:
+      - -path=/migrations
+      - -database=postgres://postgres:${ROOT_PASSWORD:?задайте в deploy/.env (образец в .env.example)}@postgres:5432/quiz?sslmode=disable
+      - up
+    depends_on:
+      postgres:
+        condition: service_healthy
+  content:
+    build: ../content/
+    ports:
+      - 8000:8000
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?задайте в deploy/.env (образец в .env.example)}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?задайте в deploy/.env (образец в .env.example)}
+      DATABASE_URL: postgres://content_user:${CONTENT_PASSWORD:?задайте в deploy/.env (образец в .env.example)}@postgres:5432/quiz
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  live:
+    build: ../live/
+    ports:
+      - 8080:8080
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?задайте в deploy/.env (образец в .env.example)}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?задайте в deploy/.env (образец в .env.example)}
+      DATABASE_URL: postgres://live_user:${LIVE_PASSWORD:?задайте в deploy/.env (образец в .env.example)}@postgres:5432/quiz
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+
+
+
+
+
+
+
+
+
+
+volumes:
+  db_data:
