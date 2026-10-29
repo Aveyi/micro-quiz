@@ -28,8 +28,6 @@ services:
         condition: service_healthy
   content:
     build: ../content/
-    ports:
-      - 8000:8000
     environment:
       JWT_SECRET: ${JWT_SECRET:?задайте в deploy/.env (образец в .env.example)}
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:?задайте в deploy/.env (образец в .env.example)}
@@ -37,10 +35,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
-  live:
+  live1:
     build: ../live/
-    ports:
-      - 8080:8080
     environment:
       JWT_SECRET: ${JWT_SECRET:?задайте в deploy/.env (образец в .env.example)}
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:?задайте в deploy/.env (образец в .env.example)}
@@ -48,16 +44,27 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
-
-
-
-
-
-
-
-
-
-
-
+  live2:
+    build: ../live/
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?задайте в deploy/.env (образец в .env.example)}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?задайте в deploy/.env (образец в .env.example)}
+      DATABASE_URL: postgres://live_user:${LIVE_PASSWORD:?задайте в deploy/.env (образец в .env.example)}@postgres:5432/quiz
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  nginx:
+    image: nginx:1.31-alpine
+    ports:
+      - 8000:8000
+    volumes:
+      - ./nginx/quiz.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      content:
+        condition: service_healthy
+      live1:
+        condition: service_healthy
+      live2:
+        condition: service_healthy
 volumes:
   db_data:
