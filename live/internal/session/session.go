@@ -59,6 +59,10 @@ type Store interface {
 	// GetActive ищет активную сессию по коду. Нет такой — ErrNotFound.
 	GetActive(ctx context.Context, code string) (Session, error)
 	SetStatus(ctx context.Context, id int64, status Status) error
+	// ExpireLobbies отменяет сессии, которые дольше olderThan висят в лобби,
+	// и возвращает, сколько отменено. Нужна для комнат, которые создали, но
+	// ведущий так и не открыл: в памяти live их нет, и таймер лобби их не видит.
+	ExpireLobbies(ctx context.Context, olderThan time.Duration) (int64, error)
 
 	// AddPlayer записывает вошедшего игрока и возвращает его id — это и
 	// есть player_id в протоколе. Ник занят — ErrNicknameTaken.

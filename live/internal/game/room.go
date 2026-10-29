@@ -125,7 +125,10 @@ func (r *Room) run() {
 	// как обычные события в select — никакой отдельной синхронизации.
 	hostWait := time.NewTimer(r.timeouts.HostWait)
 	defer hostWait.Stop()
-	lobby := time.NewTimer(r.timeouts.Lobby)
+	// Срок лобби отсчитывается от создания комнаты, а не от подключения
+	// ведущего: то же правило применяет уборка брошенных лобби в БД
+	// (session.ExpireLobbiesLoop). Если срок уже вышел, таймер сработает сразу.
+	lobby := time.NewTimer(time.Until(r.sess.CreatedAt.Add(r.timeouts.Lobby)))
 	defer lobby.Stop()
 	// Проверяем «молчунов» в несколько раз чаще, чем их таймаут,
 	// чтобы отключать их не сильно позже срока.

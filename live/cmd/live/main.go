@@ -71,6 +71,10 @@ func run(log *slog.Logger) error {
 	}
 	history := &api.Games{Auth: verifier, Store: store, Log: log}
 	games := game.NewManager(quizzes, store, log, game.DefaultTimeouts)
+	// Комнаты, которые создали, но ведущий так и не открыл, есть только в БД.
+	// Минута запаса — чтобы открытую комнату первым закрыл её собственный
+	// таймер лобби (с room_closed игрокам), а не уборка.
+	go session.ExpireLobbiesLoop(ctx, store, game.DefaultTimeouts.Lobby+time.Minute, time.Minute, log)
 	ws := &api.WS{
 		Auth:  verifier,
 		Store: store,

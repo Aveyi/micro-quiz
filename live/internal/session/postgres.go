@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -82,6 +83,22 @@ func (p *PostgresStore) SetStatus(ctx context.Context, id int64, status Status) 
 		return ErrNotFound
 	}
 	return nil
+}
+
+func (p *PostgresStore) ExpireLobbies(ctx context.Context, olderThan time.Duration) (int64, error) {
+	// Время сравнивает сама БД (now() и created_at — её часы), поэтому
+	// расхождение часов между контейнерами не важно. Запрос идемпотентный:
+	// если несколько инстансов live выполнят его одновременно, ничего плохого
+	// не случится — второй просто не найдёт строк.
+	tag, err := p.db.Exec(ctx, `
+		UPDATE live.game_sessions
+		SET status = 'cancelled', finished_at = now()
+		WHERE status = 'lobby' AND created_at < now() - make_interval(secs => $1)`,
+		olderThan.Seconds())
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
 }
 
 func (p *PostgresStore) AddPlayer(ctx context.Context, sessionID int64, nickname string) (int64, error) {

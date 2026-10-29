@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sync"
 	"testing"
+	"time"
 )
 
 // testStore — проверки, одинаковые для любой реализации Store. Их гоняем
@@ -222,6 +223,46 @@ func testStore(t *testing.T, newStore func(t *testing.T) Store) {
 		}
 		if _, err := st.GetGame(ctx, 999999); !errors.Is(err, ErrNotFound) {
 			t.Fatalf("нет игры: %v", err)
+		}
+	})
+
+	t.Run("брошенные лобби", func(t *testing.T) {
+		st := newStore(t)
+		abandoned, _ := st.Create(ctx, Session{RoomCode: "200001", QuizID: 3, QuizTitle: "x", HostUserID: 1})
+		running, _ := st.Create(ctx, Session{RoomCode: "200002", QuizID: 3, QuizTitle: "x", HostUserID: 1})
+		st.SetStatus(ctx, running.ID, StatusRunning)
+		time.Sleep(10 * time.Millisecond) // created_at строго раньше «сейчас»
+
+		// Срок ещё не вышел — ничего не трогаем.
+		if n, err := st.ExpireLobbies(ctx, time.Hour); err != nil || n != 0 {
+			t.Fatalf("срок не вышел: отменено %d, %v", n, err)
+		}
+		if _, err := st.GetActive(ctx, "200001"); err != nil {
+			t.Fatalf("свежее лобби пропало: %v", err)
+		}
+
+		// Срок вышел — отменяется только лобби, идущая игра остаётся.
+		if n, err := st.ExpireLobbies(ctx, 0); err != nil || n != 1 {
+			t.Fatalf("ожидали отменить 1 лобби, отменено %d, %v", n, err)
+		}
+		if _, err := st.GetActive(ctx, "200001"); !errors.Is(err, ErrNotFound) {
+			t.Fatalf("брошенное лобби всё ещё активно: %v", err)
+		}
+		if got, err := st.GetActive(ctx, "200002"); err != nil || got.Status != StatusRunning {
+			t.Fatalf("идущую игру тронули: %+v, %v", got, err)
+		}
+		games, _ := st.ListGames(ctx, 1, 10)
+		for _, g := range games {
+			if g.ID == abandoned.ID && (g.Status != StatusCancelled || g.FinishedAt == nil) {
+				t.Fatalf("в истории: %+v", g)
+			}
+		}
+		// Код освободился, а повторная уборка ничего не находит.
+		if _, err := st.Create(ctx, Session{RoomCode: "200001", QuizID: 3, QuizTitle: "x", HostUserID: 1}); err != nil {
+			t.Fatalf("код не освободился: %v", err)
+		}
+		if n, _ := st.ExpireLobbies(ctx, time.Hour); n != 0 {
+			t.Fatalf("повторная уборка отменила %d", n)
 		}
 	})
 

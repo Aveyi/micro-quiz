@@ -88,6 +88,23 @@ func (m *MemoryStore) SetStatus(_ context.Context, id int64, status Status) erro
 	return nil
 }
 
+func (m *MemoryStore) ExpireLobbies(_ context.Context, olderThan time.Duration) (int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	now := time.Now().UTC()
+	var n int64
+	for id, s := range m.sessions {
+		if s.Status == StatusLobby && s.CreatedAt.Before(now.Add(-olderThan)) {
+			s.Status = StatusCancelled
+			s.FinishedAt = &now
+			m.sessions[id] = s
+			n++
+		}
+	}
+	return n, nil
+}
+
 func (m *MemoryStore) AddPlayer(_ context.Context, sessionID int64, nickname string) (int64, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

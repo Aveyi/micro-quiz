@@ -263,3 +263,23 @@ func TestShutdown(t *testing.T) {
 		t.Fatalf("Shutdown: %v", err)
 	}
 }
+
+func TestLobbyTimeoutCountsFromCreation(t *testing.T) {
+	// Срок лобби — от создания комнаты, а не от подключения ведущего:
+	// иначе комната могла бы жить дольше, чем её запись в БД (её уберёт
+	// session.ExpireLobbiesLoop).
+	e := newWSEnvWith(t, game.Timeouts{HostWait: 10 * time.Second, Lobby: 400 * time.Millisecond, Join: time.Hour})
+	code := e.createRoom(t, 1)
+	time.Sleep(300 * time.Millisecond) // ведущий открыл комнату не сразу
+
+	opened := time.Now()
+	host := e.mustDial(t, code, tokenFor(t, "1"))
+	expect(t, host, "joined") // ведущий успел войти, срок ещё не вышел
+	if m := expect(t, host, "room_closed"); m.Data["reason"] != "lobby_timeout" {
+		t.Fatalf("room_closed = %v", m.Data)
+	}
+	// Осталось ~100 мс из 400, а не все 400 с момента открытия.
+	if waited := time.Since(opened); waited > 250*time.Millisecond {
+		t.Fatalf("лобби закрылось через %v после открытия, ожидали ~100 мс", waited)
+	}
+}
