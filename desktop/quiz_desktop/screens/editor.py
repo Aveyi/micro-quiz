@@ -177,7 +177,12 @@ class EditorScreen(Screen):
         # Радиокнопки в одной группе: правильным может быть только один вариант.
         self._correct_group = QButtonGroup(self)
         self._rows = [_OptionRow(i + 1) for i in range(MAX_OPTIONS)]
-        options = QGridLayout()
+        # Сетка — внутри отдельного виджета, а не прямо в QFormLayout: строку
+        # из вложенного layout форма считает неверно и сжимает поля по высоте
+        # (на macOS — 12 px вместо 21, текст вылезает за рамку).
+        options_box = QWidget()
+        options = QGridLayout(options_box)
+        options.setContentsMargins(0, 0, 0, 0)
         for i, row in enumerate(self._rows):
             self._correct_group.addButton(row.correct, i)
             options.addWidget(row.correct, i, 0)
@@ -192,7 +197,7 @@ class EditorScreen(Screen):
         form.addRow("Вопрос:", self.q_text)
         form.addRow("Время на ответ:", self.q_time)
         form.addRow(QLabel("Варианты ответа (отметьте правильный):"))
-        form.addRow(options)
+        form.addRow(options_box)
         form.addRow(self.add_option_button)
         self.add_option_button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         right = QWidget()
