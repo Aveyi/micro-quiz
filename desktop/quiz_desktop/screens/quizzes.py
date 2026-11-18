@@ -85,7 +85,7 @@ class QuizzesScreen(Screen):
         self.content.addWidget(self.table)
         self.content.addWidget(self.message)
 
-        self.play_button = set_variant(QPushButton("▶ Провести игру"), "primary")
+        self.play_button = set_variant(QPushButton("Провести игру"), "primary")
         self.play_button.clicked.connect(self.play_selected)
         self.edit_button = QPushButton("Изменить")
         self.edit_button.clicked.connect(self.edit_selected)

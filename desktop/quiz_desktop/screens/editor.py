@@ -160,7 +160,7 @@ class EditorScreen(Screen):
         list_buttons.addWidget(self.up_button)
         list_buttons.addWidget(self.down_button)
         # Обе половины — карточки: список вопросов и форма выбранного вопроса.
-        left = card(shadow=False)
+        left = card()
         left_layout = QVBoxLayout(left)
         left_layout.setContentsMargins(16, 16, 16, 16)
         left_layout.addWidget(set_role(QLabel("Вопросы"), "section"))
@@ -219,7 +219,7 @@ class EditorScreen(Screen):
         form.addRow(options_box)
         form.addRow(self.add_option_button)
         self.add_option_button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        right = card(shadow=False)
+        right = card()
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(20, 18, 20, 18)
         right_layout.addLayout(form)

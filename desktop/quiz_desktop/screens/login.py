@@ -81,7 +81,7 @@ class LoginScreen(Screen):
         box_layout = QVBoxLayout(box)
         box_layout.setContentsMargins(36, 32, 36, 24)
         box_layout.setSpacing(10)
-        box_layout.addWidget(LogoMark(52), alignment=Qt.AlignmentFlag.AlignCenter)
+        box_layout.addWidget(LogoMark(44), alignment=Qt.AlignmentFlag.AlignCenter)
         box_layout.addWidget(self.title)
         box_layout.addWidget(subtitle)
         box_layout.addSpacing(8)

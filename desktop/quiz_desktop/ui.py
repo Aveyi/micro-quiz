@@ -1,33 +1,24 @@
 """Общие кирпичики интерфейса: карточка и логотип."""
 
-from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QColor, QFont, QLinearGradient, QPainter, QPainterPath
-from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QWidget
+from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
+from PySide6.QtWidgets import QFrame, QWidget
 
 from quiz_desktop import theme
 
 
-def card(parent: QWidget | None = None, shadow: bool = True) -> QFrame:
-    """Белая карточка со скруглением и мягкой тенью (стиль — theme.py, QFrame#card)."""
+def card(parent: QWidget | None = None) -> QFrame:
+    """Карточка: светлая поверхность с тонкой рамкой и скруглением (стиль — theme.py, QFrame#card)."""
     frame = QFrame(parent)
     frame.setObjectName("card")
-    if shadow:
-        effect = QGraphicsDropShadowEffect(frame)
-        effect.setBlurRadius(36)
-        effect.setOffset(0, 8)
-        r, g, b, a = (int(x) for x in theme.palette().shadow.split(","))
-        effect.setColor(QColor(r, g, b, a))
-        frame.setGraphicsEffect(effect)
     return frame
 
 
 class LogoMark(QWidget):
-    """Логотип: скруглённый квадрат с градиентом и знаком вопроса.
-    inverted — белый квадрат: для цветной шапки, где градиент слился бы с фоном."""
+    """Логотип: квадрат цвета «чернил» с буквой Q — белое кольцо и киноварный хвостик."""
 
-    def __init__(self, size: int = 56, inverted: bool = False):
+    def __init__(self, size: int = 40):
         super().__init__()
-        self._inverted = inverted
         self.setFixedSize(size, size)
 
     def paintEvent(self, event) -> None:
@@ -35,22 +26,23 @@ class LogoMark(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = QRectF(self.rect())
-        path = QPainterPath()
-        path.addRoundedRect(rect, rect.width() * 0.3, rect.height() * 0.3)
-        if self._inverted:
-            painter.fillPath(path, QColor("white"))
-            glyph = QColor(p.hero_from)
-        else:
-            gradient = QLinearGradient(rect.topLeft(), rect.bottomRight())
-            gradient.setColorAt(0, QColor(p.hero_from))
-            gradient.setColorAt(1, QColor(p.hero_to))
-            painter.fillPath(path, gradient)
-            glyph = QColor("white")
+        side = rect.width()
 
-        font = QFont()
-        font.setFamilies(theme.FONT_FAMILIES)
-        font.setBold(True)
-        font.setPixelSize(int(rect.height() * 0.62))
-        painter.setFont(font)
-        painter.setPen(glyph)
-        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, "?")
+        # В тёмной теме квадрат светлый, как и главные кнопки: логотип всегда контрастен фону.
+        path = QPainterPath()
+        path.addRoundedRect(rect, side * 0.24, side * 0.24)
+        painter.fillPath(path, QColor(p.primary))
+
+        center = QPointF(rect.center().x() - side * 0.03, rect.center().y() - side * 0.03)
+        radius = side * 0.23
+        painter.setPen(QPen(QColor(p.primary_text), side * 0.1))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawEllipse(center, radius, radius)
+
+        tail = QPen(QColor(p.accent), side * 0.1)
+        tail.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(tail)
+        painter.drawLine(
+            QPointF(center.x() + radius * 0.5, center.y() + radius * 0.5),
+            QPointF(center.x() + radius * 1.3, center.y() + radius * 1.3),
+        )

@@ -2,11 +2,11 @@
 
 import pytest
 from PySide6.QtCore import QSize, qInstallMessageHandler
-from PySide6.QtWidgets import QApplication, QFrame, QGraphicsDropShadowEffect, QLabel, QPushButton
+from PySide6.QtWidgets import QApplication, QFrame, QLabel, QPushButton
 
 from quiz_desktop import theme
 from quiz_desktop.main_window import MainWindow
-from quiz_desktop.screens.game_common import Countdown, Leaderboard
+from quiz_desktop.screens.game_common import Countdown, Leaderboard, OptionButtons
 from quiz_desktop.theme import DARK, LIGHT, apply_theme, set_role, set_variant
 
 
@@ -117,13 +117,32 @@ def test_unknown_mode_is_ignored(window, settings):
     assert settings.theme == "auto"
 
 
-def test_card_shadow_follows_theme(window):
-    window.set_theme("light")
-    cards = [f for f in window.findChildren(QFrame, "card") if isinstance(f.graphicsEffect(), QGraphicsDropShadowEffect)]
-    assert cards  # на стартовом экране и экране входа есть карточки с тенью
-    window.set_theme("dark")
-    expected_alpha = int(DARK.shadow.split(",")[3])
-    assert all(c.graphicsEffect().color().alpha() == expected_alpha for c in cards)
+def test_cards_are_flat(window):
+    """Карточки плоские: тонкая рамка вместо теней, без графических эффектов."""
+    cards = window.findChildren(QFrame, "card")
+    assert cards
+    assert all(c.graphicsEffect() is None for c in cards)
+
+
+def test_no_emoji_in_interface():
+    """В интерфейсе нет эмодзи и декоративных значков: стиль держится на типографике.
+    Разрешены только галочка и крестик как обычные типографские знаки."""
+    import pathlib
+    import re
+
+    emoji = re.compile("[🀀-🫿☀-➿⬀-⯿]")
+    allowed = {"✓", "✕"}
+    found = []
+    for path in sorted(pathlib.Path(theme.__file__).parent.rglob("*.py")):
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            found += [f"{path.name}:{number}: {m.group()}" for m in emoji.finditer(line) if m.group() not in allowed]
+    assert found == []
+
+
+def test_no_gradients_in_stylesheet():
+    for p in (LIGHT, DARK):
+        css = theme.stylesheet(p)
+        assert "qlineargradient" not in css  # плоские заливки; радиальный градиент только внутри «точки» радиокнопки
 
 
 @pytest.mark.parametrize("mode", ["light", "dark"])
@@ -215,3 +234,16 @@ def test_window_can_shrink_after_growing(qtbot, window):
     window.resize(1100, 800)
     qtbot.wait(100)
     assert window.width() <= 1200
+
+
+def test_option_buttons_have_letters_but_keep_text(qtbot):
+    options = OptionButtons()
+    qtbot.addWidget(options)
+    options.set_options([{"option_id": i, "text": text} for i, text in enumerate(["Сидней", "Канберра", "Мельбурн", "Перт"], start=10)])
+    buttons = list(options.buttons.values())
+    assert [b.text() for b in buttons] == ["Сидней", "Канберра", "Мельбурн", "Перт"]  # буква дорисовывается, текст не меняется
+    assert [b._letter for b in buttons] == ["A", "B", "C", "D"]
+    assert len({b.styleSheet() for b in buttons}) == 4  # у каждого варианта свой цвет
+    options.show()
+    for b in buttons:
+        assert not b.grab().isNull()

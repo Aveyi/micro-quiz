@@ -1,10 +1,13 @@
 """Оформление приложения: светлая и тёмная темы.
 
-Вся внешность собрана здесь в одной таблице стилей (QSS, это CSS для Qt),
-а экраны только называют роль виджета: кнопка «основная», подпись «ошибка».
-Так оформление меняется в одном месте, а тема переключается на лету.
+Стиль сдержанный, «журнальный»: тёплая бумажная основа, чёрные чернила для текста
+и главных кнопок и один акцентный цвет (киноварь) для важных деталей. Без градиентов,
+теней и декоративных значков: порядок строят отступы, тонкие линии и размер шрифта.
 
-    set_variant(button, "primary")   # кнопка с акцентной заливкой
+Весь вид собран здесь в одной таблице стилей (QSS, это CSS для Qt), а экраны только
+называют роль виджета: кнопка «основная», подпись «ошибка»:
+
+    set_variant(button, "primary")   # чёрная кнопка
     set_role(label, "error")         # красная подпись
 """
 
@@ -27,78 +30,76 @@ class Palette:
     name: str
     bg: str  # фон окна
     surface: str  # карточки, поля ввода, таблицы
-    surface_alt: str  # вторичные кнопки, дорожка индикатора
+    surface_alt: str  # вторичные заливки, дорожка индикатора
     hover: str
     border: str
-    text: str
+    text: str  # «чернила»
     muted: str  # второстепенный текст
-    accent: str
-    accent_hover: str
-    accent_pressed: str
-    accent_text: str  # текст на акцентной заливке
-    accent_soft: str  # мягкая подсветка: выбранная строка, бейдж
-    accent_disabled: str
+    accent: str  # единственный яркий цвет: фокус, ссылки, срочное
+    selection: str  # заливка выбранной строки в таблицах и списках
+    primary: str  # заливка главных кнопок
+    primary_hover: str
+    primary_pressed: str
+    primary_disabled: str
+    primary_text: str  # текст на главных кнопках
     danger: str
     danger_soft: str
     success: str
     warning: str
-    hero_from: str  # градиент шапки
-    hero_to: str
-    shadow: str  # цвет тени карточек, «r,g,b,a»
 
 
 LIGHT = Palette(
     name="light",
-    bg="#F3F4FB",
-    surface="#FFFFFF",
-    surface_alt="#ECEEF8",
-    hover="#E2E5F4",
-    border="#DADDEE",
-    text="#1D2040",
-    muted="#666B8F",
-    accent="#5B4CF0",
-    accent_hover="#4C3DDC",
-    accent_pressed="#4030C0",
-    accent_text="#FFFFFF",
-    accent_soft="#E7E5FF",
-    accent_disabled="#B9B3F6",
-    danger="#D92D3A",
-    danger_soft="#FDECEE",
-    success="#128A4A",
-    warning="#B26A00",
-    hero_from="#5B4CF0",
-    hero_to="#B24CE6",
-    shadow="30,30,90,38",
+    bg="#F4F1EA",
+    surface="#FCFBF8",
+    surface_alt="#ECE8DE",
+    hover="#E3DED1",
+    border="#D8D3C6",
+    text="#1B1B1F",
+    muted="#6F6A5F",
+    accent="#D9482B",
+    selection="#E8E2D3",
+    primary="#1B1B1F",
+    primary_hover="#33333A",
+    primary_pressed="#000000",
+    primary_disabled="#A9A59B",
+    primary_text="#FCFBF8",
+    danger="#B3261E",
+    danger_soft="#F7E1DE",
+    success="#1F7A4D",
+    warning="#946300",
 )
 
 DARK = Palette(
     name="dark",
-    bg="#0F101B",
-    surface="#191B2D",
-    surface_alt="#23263C",
-    hover="#2C3050",
-    border="#2F3354",
-    text="#ECEEFF",
-    muted="#9A9FC8",
-    accent="#7364FF",
-    accent_hover="#8678FF",
-    accent_pressed="#6355EE",
-    accent_text="#FFFFFF",
-    accent_soft="#2A2766",
-    accent_disabled="#4B4687",
-    danger="#FF6B73",
-    danger_soft="#3B1D27",
-    success="#3DD68C",
-    warning="#F5B544",
-    hero_from="#4338CA",
-    hero_to="#9333EA",
-    shadow="0,0,0,110",
+    bg="#121214",
+    surface="#1B1B1F",
+    surface_alt="#26262B",
+    hover="#303036",
+    border="#34343B",
+    text="#ECE9E2",
+    muted="#9C978B",
+    accent="#FF6B4A",
+    selection="#2C2C33",
+    primary="#ECE9E2",
+    primary_hover="#FFFFFF",
+    primary_pressed="#CFCBC2",
+    primary_disabled="#55524B",
+    primary_text="#121214",
+    danger="#FF7A72",
+    danger_soft="#3C1F1D",
+    success="#4FD08A",
+    warning="#E7B04A",
 )
 
-# Цвета вариантов ответа, как в Kahoot: по цвету вариант легко найти и у себя,
-# и на экране ведущего. Одинаковы в обеих темах: на них всегда белый текст.
-OPTION_COLORS = ["#EE4258", "#2F7BEA", "#D98A00", "#1F9D55"]
-OPTION_MUTED = "#8E93B3"  # невыбранные варианты после ответа
+# Цвета вариантов ответа: по цвету и букве вариант легко найти и у себя, и на экране
+# ведущего. Приглушённые, но различимые; одинаковы в обеих темах, на них всегда белый текст.
+OPTION_COLORS = ["#D9482B", "#2F5DA8", "#B7800F", "#2E7D5B"]
+OPTION_LETTERS = "ABCD"
+OPTION_MUTED = "#8C897F"  # невыбранные варианты после ответа
+
+# Медали первой тройки в таблице лидеров: золото, серебро, бронза.
+MEDAL_COLORS = {1: "#C9A227", 2: "#9AA0A6", 3: "#A8703E"}
 
 _STYLESHEET = Template(
     """
@@ -112,82 +113,68 @@ QToolTip {
     border-radius: 6px; padding: 6px 8px;
 }
 
-/* ---------- карточки и шапка ---------- */
+/* ---------- карточки ---------- */
 QFrame#card {
-    background: $surface; border: 1px solid $border; border-radius: 18px;
-}
-QFrame#hero {
-    border: none; border-radius: 24px;
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 $hero_from, stop:1 $hero_to);
+    background: $surface; border: 1px solid $border; border-radius: 14px;
 }
 
 /* ---------- подписи ---------- */
-QLabel[role="title"] { font-size: 30px; font-weight: 700; }
+QLabel[role="display"] { font-size: 40px; font-weight: 800; }
+QLabel[role="title"] { font-size: 30px; font-weight: 800; }
 QLabel[role="h1"] { font-size: 24px; font-weight: 700; }
 QLabel[role="h2"] { font-size: 17px; font-weight: 600; }
+QLabel[role="lead"] { color: $muted; font-size: 16px; }
 QLabel[role="muted"] { color: $muted; }
 QLabel[role="section"] { color: $muted; font-size: 12px; font-weight: 700; }
+QLabel[role="brand"] { font-size: 16px; font-weight: 700; }
+QLabel[role="index"] { color: $accent; font-size: 13px; font-weight: 700; }
 QLabel[role="error"] { color: $danger; }
 QLabel[role="success"] { color: $success; }
 QLabel[role="title-success"] { font-size: 34px; font-weight: 800; color: $success; }
 QLabel[role="title-error"] { font-size: 34px; font-weight: 800; color: $danger; }
-QLabel[role="hero-title"] { color: white; font-size: 36px; font-weight: 800; }
-QLabel[role="hero-text"] { color: rgba(255,255,255,222); font-size: 16px; }
-QLabel[role="badge"] {
-    background: $accent_soft; color: $accent; border-radius: 9px;
-    padding: 3px 12px; font-weight: 600;
-}
 QLabel[role="code"] {
-    color: $accent; font-size: 72px; font-weight: 800;
-    background: $accent_soft; border-radius: 22px; padding: 6px 28px;
+    color: $text; font-size: 72px; font-weight: 800;
+    background: $surface; border: 2px solid $text; border-radius: 16px; padding: 4px 30px;
 }
-QLabel[role="icon"] {
-    background: $accent_soft; border-radius: 18px; font-size: 28px;
-    min-width: 60px; max-width: 60px; min-height: 60px; max-height: 60px;
-}
-QLabel[role="pill"] {
-    background: rgba(255,255,255,48); color: white; border-radius: 12px;
-    padding: 4px 14px; font-weight: 600;
-}
-QLabel[role="timer"] { font-size: 44px; font-weight: 800; color: $accent; }
-QLabel[role="timer"][low="true"] { color: $danger; }
+QLabel[role="timer"] { font-size: 44px; font-weight: 800; }
+QLabel[role="timer"][low="true"] { color: $accent; }
 
 /* ---------- кнопки ---------- */
 QPushButton {
     background: $surface; color: $text; border: 1px solid $border;
-    border-radius: 11px; padding: 9px 18px; font-weight: 600;
+    border-radius: 9px; padding: 9px 18px; font-weight: 600;
 }
-QPushButton:hover { background: $hover; }
-QPushButton:pressed { background: $border; }
+QPushButton:hover { background: $surface_alt; }
+QPushButton:pressed { background: $hover; }
 QPushButton:disabled { color: $muted; background: $surface_alt; border-color: $surface_alt; }
 QPushButton[variant="primary"] {
-    background: $accent; color: $accent_text; border: 1px solid $accent;
+    background: $primary; color: $primary_text; border: 1px solid $primary;
 }
-QPushButton[variant="primary"]:hover { background: $accent_hover; border-color: $accent_hover; }
-QPushButton[variant="primary"]:pressed { background: $accent_pressed; border-color: $accent_pressed; }
+QPushButton[variant="primary"]:hover { background: $primary_hover; border-color: $primary_hover; }
+QPushButton[variant="primary"]:pressed { background: $primary_pressed; border-color: $primary_pressed; }
 QPushButton[variant="primary"]:disabled {
-    background: $accent_disabled; color: $accent_text; border-color: $accent_disabled;
+    background: $primary_disabled; color: $primary_text; border-color: $primary_disabled;
 }
 QPushButton[variant="danger"] { color: $danger; border: 1px solid $danger; background: transparent; }
 QPushButton[variant="danger"]:hover { background: $danger_soft; }
 QPushButton[variant="danger"]:disabled { color: $muted; border-color: $border; background: transparent; }
 QPushButton[variant="ghost"] { background: transparent; border: none; color: $muted; }
-QPushButton[variant="ghost"]:hover { background: $hover; color: $text; }
+QPushButton[variant="ghost"]:hover { background: $surface_alt; color: $text; }
 QPushButton[variant="link"] { background: transparent; border: none; color: $accent; padding: 6px 8px; }
-QPushButton[variant="link"]:hover { background: $accent_soft; }
+QPushButton[variant="link"]:hover { background: $selection; }
 QPushButton:focus { outline: none; }
 
 QToolButton {
-    background: $surface_alt; color: $text; border: 1px solid $border;
+    background: $surface; color: $text; border: 1px solid $border;
     border-radius: 9px; padding: 6px 11px; font-weight: 700;
 }
-QToolButton:hover { background: $hover; }
+QToolButton:hover { background: $surface_alt; }
 QToolButton:disabled { color: $muted; background: transparent; border-color: transparent; }
 
 /* ---------- поля ввода ---------- */
 QLineEdit, QPlainTextEdit {
-    background: $surface; color: $text; border: 1px solid $border; border-radius: 11px;
-    padding: 9px 12px; selection-background-color: $accent; selection-color: $accent_text;
+    background: $surface; color: $text; border: 1px solid $border; border-radius: 9px;
+    padding: 9px 12px; selection-background-color: $text; selection-color: $surface;
 }
 QLineEdit:focus, QPlainTextEdit:focus { border: 2px solid $accent; padding: 8px 11px; }
 QLineEdit:disabled { background: $surface_alt; color: $muted; }
@@ -199,7 +186,7 @@ QRadioButton::indicator {
     width: 18px; height: 18px; border-radius: 10px;
     border: 2px solid $border; background: $surface;
 }
-QRadioButton::indicator:hover { border-color: $accent; }
+QRadioButton::indicator:hover { border-color: $text; }
 QRadioButton::indicator:checked {
     border: 2px solid $accent;
     background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5,
@@ -208,16 +195,16 @@ QRadioButton::indicator:checked {
 
 /* ---------- таблицы и списки ---------- */
 QTableWidget, QListWidget {
-    background: $surface; border: 1px solid $border; border-radius: 14px;
-    outline: 0; selection-background-color: $accent_soft; selection-color: $text;
+    background: $surface; border: 1px solid $border; border-radius: 12px;
+    outline: 0; selection-background-color: $selection; selection-color: $text;
 }
 QListWidget { padding: 6px; }
-QListWidget::item { padding: 10px 12px; border-radius: 9px; margin: 1px 0; }
-QListWidget::item:selected { background: $accent_soft; color: $text; }
+QListWidget::item { padding: 10px 12px; border-radius: 8px; margin: 1px 0; }
+QListWidget::item:selected { background: $selection; color: $text; }
 QListWidget::item:hover:!selected { background: $surface_alt; }
 QTableWidget { gridline-color: transparent; }
 QTableWidget::item { padding: 10px 12px; border-bottom: 1px solid $border; }
-QTableWidget::item:selected { background: $accent_soft; color: $text; }
+QTableWidget::item:selected { background: $selection; color: $text; }
 QHeaderView { background: transparent; }
 QHeaderView::section {
     background: transparent; color: $muted; border: none; border-bottom: 1px solid $border;
@@ -233,19 +220,19 @@ QScrollBar::handle:horizontal { background: $border; border-radius: 4px; min-wid
 QScrollBar::add-line, QScrollBar::sub-line { width: 0; height: 0; }
 QScrollBar::add-page, QScrollBar::sub-page { background: transparent; }
 
-QProgressBar { background: $surface_alt; border: none; border-radius: 6px; min-height: 14px; max-height: 14px; }
-QProgressBar::chunk { background: $accent; border-radius: 6px; }
-QProgressBar[low="true"]::chunk { background: $danger; }
+QProgressBar { background: $surface_alt; border: none; border-radius: 3px; min-height: 8px; max-height: 8px; }
+QProgressBar::chunk { background: $text; border-radius: 3px; }
+QProgressBar[low="true"]::chunk { background: $accent; }
 
 QSplitter::handle { background: transparent; }
 
 /* ---------- меню и строка состояния ---------- */
 QMenuBar { background: $surface; border-bottom: 1px solid $border; padding: 3px 6px; }
-QMenuBar::item { background: transparent; padding: 6px 12px; border-radius: 8px; }
-QMenuBar::item:selected { background: $accent_soft; }
-QMenu { background: $surface; border: 1px solid $border; border-radius: 12px; padding: 6px; }
-QMenu::item { padding: 8px 26px 8px 14px; border-radius: 8px; }
-QMenu::item:selected { background: $accent_soft; }
+QMenuBar::item { background: transparent; padding: 6px 12px; border-radius: 7px; }
+QMenuBar::item:selected { background: $surface_alt; }
+QMenu { background: $surface; border: 1px solid $border; border-radius: 10px; padding: 6px; }
+QMenu::item { padding: 8px 26px 8px 14px; border-radius: 7px; }
+QMenu::item:selected { background: $surface_alt; }
 QMenu::item:disabled { color: $muted; }
 QMenu::separator { height: 1px; background: $border; margin: 6px 8px; }
 QStatusBar { background: $surface; border-top: 1px solid $border; color: $muted; }
@@ -279,7 +266,7 @@ def resolve_mode(mode: str, app: QApplication | None = None) -> Palette:
 
 def _qpalette(p: Palette) -> QPalette:
     """Палитра Qt для частей интерфейса, которые таблица стилей не красит
-    (например, текст в стандартных диалогах)."""
+    (например, текст в стандартных диалогах и поле времени на ответ)."""
     qp = QPalette()
     for role, color in (
         (QPalette.ColorRole.Window, p.bg),
@@ -292,8 +279,8 @@ def _qpalette(p: Palette) -> QPalette:
         (QPalette.ColorRole.ToolTipBase, p.surface),
         (QPalette.ColorRole.ToolTipText, p.text),
         (QPalette.ColorRole.PlaceholderText, p.muted),
-        (QPalette.ColorRole.Highlight, p.accent),
-        (QPalette.ColorRole.HighlightedText, p.accent_text),
+        (QPalette.ColorRole.Highlight, p.text),
+        (QPalette.ColorRole.HighlightedText, p.surface),
     ):
         qp.setColor(role, QColor(color))
     return qp
@@ -327,7 +314,8 @@ def repolish(widget: QWidget) -> None:
 
 
 def set_role(widget: QWidget, role: str) -> QWidget:
-    """Роль подписи: title, h1, h2, muted, section, error, success, badge, code, timer."""
+    """Роль подписи: display, title, h1, h2, lead, muted, section, brand, index,
+    error, success, code, timer, title-success, title-error."""
     widget.setProperty("role", role)
     repolish(widget)
     return widget

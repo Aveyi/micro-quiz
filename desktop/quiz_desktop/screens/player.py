@@ -88,7 +88,7 @@ class PlayerScreen(Screen):
         box_layout = QVBoxLayout(box)
         box_layout.setContentsMargins(36, 32, 36, 24)
         box_layout.setSpacing(10)
-        box_layout.addWidget(LogoMark(52), alignment=Qt.AlignmentFlag.AlignCenter)
+        box_layout.addWidget(LogoMark(44), alignment=Qt.AlignmentFlag.AlignCenter)
         box_layout.addWidget(big_label("Вход в комнату", 24, role="h1"))
         box_layout.addWidget(big_label("Код вам скажет ведущий", 12, bold=False, role="muted"))
         box_layout.addSpacing(8)

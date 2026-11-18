@@ -1,6 +1,6 @@
 """Общие виджеты экранов игры (игрок и ведущий): таймер, варианты, таблица."""
 
-from PySide6.QtCore import QElapsedTimer, QSize, Qt, QTimer, Signal
+from PySide6.QtCore import QElapsedTimer, QRectF, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QGridLayout,
@@ -14,13 +14,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from quiz_desktop.theme import OPTION_COLORS, OPTION_MUTED, repolish, set_role
+from quiz_desktop.theme import MEDAL_COLORS, OPTION_COLORS, OPTION_LETTERS, OPTION_MUTED, repolish, set_role
 
-# Цвета вариантов, как в Kahoot (OPTION_COLORS в theme.py): по цвету вариант
-# легко найти и на экране ведущего, и у себя.
-
-# Медали первой тройки в таблице лидеров: золото, серебро, бронза.
-MEDAL_COLORS = {1: "#F5B301", 2: "#A7AEC8", 3: "#C9824B"}
+# Цвета и буквы вариантов (theme.py): по цвету и букве вариант легко найти
+# и у себя, и на экране ведущего.
 
 # Сообщения room_closed (раздел 4.4).
 ROOM_CLOSED_REASONS = {
@@ -103,14 +100,40 @@ class Countdown(QWidget):
             self.expired.emit()
 
 
+class OptionButton(QPushButton):
+    """Вариант ответа: цветная плашка с буквой A–D слева. Текст кнопки — только сам вариант,
+    букву дорисовываем поверх, поэтому button.text() остаётся текстом варианта."""
+
+    def __init__(self, text: str, letter: str):
+        super().__init__(text)
+        self._letter = letter
+
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        size = 32.0
+        badge = QRectF(18, (self.height() - size) / 2, size, size)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(255, 255, 255, 60))
+        painter.drawRoundedRect(badge, 9, 9)
+        font = QFont(self.font())
+        font.setBold(True)
+        font.setPixelSize(16)
+        painter.setFont(font)
+        painter.setPen(QColor("white"))
+        painter.drawText(badge, Qt.AlignmentFlag.AlignCenter, self._letter)
+
+
 class OptionButtons(QWidget):
-    """Цветные кнопки вариантов, сеткой 2×2."""
+    """Цветные кнопки вариантов с буквами, сеткой 2×2."""
 
     chosen = Signal(int)  # option_id
 
     def __init__(self):
         super().__init__()
         self._grid = QGridLayout(self)
+        self._grid.setContentsMargins(0, 0, 0, 0)  # края совпадают с остальным содержимым экрана
         self.buttons: dict[int, QPushButton] = {}
 
     def set_options(self, options: list[dict]) -> None:
@@ -118,7 +141,7 @@ class OptionButtons(QWidget):
             button.deleteLater()
         self.buttons = {}
         for i, option in enumerate(options):
-            button = QPushButton(option["text"])
+            button = OptionButton(option["text"], OPTION_LETTERS[i % len(OPTION_LETTERS)])
             button.setMinimumHeight(84)
             button.setCursor(Qt.CursorShape.PointingHandCursor)
             font = button.font()
@@ -142,9 +165,9 @@ class OptionButtons(QWidget):
     def _paint(button: QPushButton, color: str) -> None:
         base = QColor(color)
         button.setStyleSheet(
-            f"QPushButton {{ background: {color}; color: white; border: none; border-radius: 16px;"
-            f" padding: 12px 18px; font-weight: 700; }}"
-            f"QPushButton:hover {{ background: {base.lighter(112).name()}; }}"
+            f"QPushButton {{ background: {color}; color: white; border: none; border-radius: 12px;"
+            f" padding: 12px 58px; font-weight: 700; }}"
+            f"QPushButton:hover {{ background: {base.lighter(108).name()}; }}"
             f"QPushButton:pressed {{ background: {base.darker(115).name()}; }}"
             f"QPushButton:disabled {{ background: {color}; color: white; }}"
         )
@@ -161,7 +184,7 @@ def _medal_icon(rank: int) -> QIcon:
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor(color))
-        painter.drawEllipse(1, 1, 16, 16)
+        painter.drawEllipse(3, 3, 12, 12)  # скромная точка, а не крупная «медаль»
         painter.end()
     return QIcon(pixmap)
 

@@ -1,7 +1,7 @@
 """Главное окно: экраны, меню, строка состояния."""
 
-from PySide6.QtGui import QActionGroup, QColor
-from PySide6.QtWidgets import QApplication, QFrame, QGraphicsDropShadowEffect, QLabel, QMainWindow, QStackedWidget
+from PySide6.QtGui import QActionGroup
+from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QStackedWidget
 
 from quiz_desktop.api import ApiClient
 from quiz_desktop.live_client import live_http_base
@@ -15,7 +15,7 @@ from quiz_desktop.screens.quizzes import QuizzesScreen
 from quiz_desktop.screens.start import StartScreen
 from quiz_desktop.settings import AppSettings
 from quiz_desktop.settings_dialog import SettingsDialog
-from quiz_desktop.theme import THEME_MODES, apply_theme, palette
+from quiz_desktop.theme import THEME_MODES, apply_theme
 
 
 class MainWindow(QMainWindow):
@@ -113,12 +113,6 @@ class MainWindow(QMainWindow):
     def apply_theme(self) -> None:
         app = QApplication.instance()
         apply_theme(app, self.settings.theme)
-        # Тень карточек зависит от темы и не входит в таблицу стилей — обновляем отдельно.
-        r, g, b, a = (int(x) for x in palette().shadow.split(","))
-        for frame in self.findChildren(QFrame, "card"):
-            effect = frame.graphicsEffect()
-            if isinstance(effect, QGraphicsDropShadowEffect):
-                effect.setColor(QColor(r, g, b, a))
 
     def login(self, token: str, username: str) -> None:
         """Ведущий вошёл: запоминаем токен (только в памяти) и открываем его викторины."""
