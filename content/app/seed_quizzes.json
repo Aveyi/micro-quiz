@@ -1,0 +1,310 @@
+[
+  {
+    "title": "Мемы: проверь свой интернет-стаж",
+    "description": "10 вопросов про самые известные интернет-мемы: от Doge до рикролла.",
+    "questions": [
+      {
+        "text": "Какая порода собаки изображена в меме «Doge»?",
+        "time_limit_sec": 15,
+        "options": [
+          {"text": "Хаски", "is_correct": false},
+          {"text": "Корги", "is_correct": false},
+          {"text": "Шиба-ину", "is_correct": true},
+          {"text": "Лабрадор", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Какая песня стоит за «рикроллом» — шуткой, когда вместо нужной ссылки человеку подсовывают видео?",
+        "time_limit_sec": 20,
+        "options": [
+          {"text": "«Never Gonna Give You Up» Рика Эстли", "is_correct": true},
+          {"text": "«Take On Me» группы a-ha", "is_correct": false},
+          {"text": "«Careless Whisper» Джорджа Майкла", "is_correct": false},
+          {"text": "«Don't Stop Believin'» группы Journey", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Что происходит вокруг собаки в меме «This is fine» («Всё нормально»)?",
+        "time_limit_sec": 15,
+        "options": [
+          {"text": "Наводнение", "is_correct": false},
+          {"text": "Горит комната", "is_correct": true},
+          {"text": "Идёт снегопад", "is_correct": false},
+          {"text": "Землетрясение", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Верно ли, что мем «Distracted Boyfriend» («Неверный парень») сделан из обычной фотографии из фотостока?",
+        "time_limit_sec": 20,
+        "options": [
+          {"text": "Да, это фотография из фотостока", "is_correct": true},
+          {"text": "Нет, это кадр из кинофильма", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Из какой игры пошла фраза «Press F to pay respects» («Нажми F, чтобы отдать честь»)?",
+        "time_limit_sec": 20,
+        "options": [
+          {"text": "Minecraft", "is_correct": false},
+          {"text": "Fortnite", "is_correct": false},
+          {"text": "The Sims 4", "is_correct": false},
+          {"text": "Call of Duty: Advanced Warfare", "is_correct": true}
+        ]
+      },
+      {
+        "text": "Что означает слово «кринж»?",
+        "time_limit_sec": 20,
+        "options": [
+          {"text": "Сильный восторг", "is_correct": false},
+          {"text": "Желание поесть", "is_correct": false},
+          {"text": "Неловкость и стыд за чужие слова или поступки", "is_correct": true},
+          {"text": "Усталость после работы", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Кем был Харамбе, ставший мемом в 2016 году?",
+        "time_limit_sec": 20,
+        "options": [
+          {"text": "Слоном из цирка", "is_correct": false},
+          {"text": "Гориллой из зоопарка Цинциннати", "is_correct": true},
+          {"text": "Белым медведем", "is_correct": false},
+          {"text": "Бегемотом из африканского заповедника", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Из чего «сделано» тело кота из мема Nyan Cat, летящего по космосу с радужным хвостом?",
+        "time_limit_sec": 15,
+        "options": [
+          {"text": "Из пиццы", "is_correct": false},
+          {"text": "Из пончика", "is_correct": false},
+          {"text": "Из суши", "is_correct": false},
+          {"text": "Из тарта Pop-Tart с розовой глазурью", "is_correct": true}
+        ]
+      },
+      {
+        "text": "Какой клип первым набрал миллиард просмотров на YouTube?",
+        "time_limit_sec": 20,
+        "options": [
+          {"text": "«Gangnam Style» (PSY)", "is_correct": true},
+          {"text": "«Baby» (Justin Bieber)", "is_correct": false},
+          {"text": "«Despacito» (Luis Fonsi)", "is_correct": false},
+          {"text": "«Call Me Maybe» (Carly Rae Jepsen)", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Что обычно символизирует мем Trollface (улыбающееся лицо из рисованных комиксов)?",
+        "time_limit_sec": 15,
+        "options": [
+          {"text": "Победу в онлайн-игре", "is_correct": false},
+          {"text": "Троллинг: подколки и провокации в интернете", "is_correct": true}
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Космос: от Земли до Млечного Пути",
+    "description": "10 вопросов о планетах, звёздах и космических первопроходцах.",
+    "questions": [
+      {
+        "text": "Какая планета Солнечной системы самая большая?",
+        "time_limit_sec": 15,
+        "options": [
+          {"text": "Сатурн", "is_correct": false},
+          {"text": "Юпитер", "is_correct": true},
+          {"text": "Нептун", "is_correct": false},
+          {"text": "Земля", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Сколько планет в Солнечной системе с 2006 года, когда Плутон признали карликовой планетой?",
+        "time_limit_sec": 20,
+        "options": [
+          {"text": "8", "is_correct": true},
+          {"text": "9", "is_correct": false},
+          {"text": "7", "is_correct": false},
+          {"text": "10", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Кто стал первым человеком в космосе (12 апреля 1961 года)?",
+        "time_limit_sec": 15,
+        "options": [
+          {"text": "Герман Титов", "is_correct": false},
+          {"text": "Нил Армстронг", "is_correct": false},
+          {"text": "Алексей Леонов", "is_correct": false},
+          {"text": "Юрий Гагарин", "is_correct": true}
+        ]
+      },
+      {
+        "text": "Как называется галактика, в которой находится Солнечная система?",
+        "time_limit_sec": 20,
+        "options": [
+          {"text": "Андромеда", "is_correct": false},
+          {"text": "Галактика Треугольника", "is_correct": false},
+          {"text": "Млечный Путь", "is_correct": true},
+          {"text": "Галактика Водоворот", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Верно ли, что сутки на Венере длиннее её года?",
+        "time_limit_sec": 20,
+        "options": [
+          {"text": "Верно", "is_correct": true},
+          {"text": "Неверно", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Какую планету называют «красной планетой»?",
+        "time_limit_sec": 15,
+        "options": [
+          {"text": "Венеру", "is_correct": false},
+          {"text": "Марс", "is_correct": true}
+        ]
+      },
+      {
+        "text": "Какая звезда, не считая Солнца, находится к Земле ближе всех?",
+        "time_limit_sec": 20,
+        "options": [
+          {"text": "Сириус", "is_correct": false},
+          {"text": "Бетельгейзе", "is_correct": false},
+          {"text": "Полярная звезда", "is_correct": false},
+          {"text": "Проксима Центавра", "is_correct": true}
+        ]
+      },
+      {
+        "text": "Кто первым ступил на поверхность Луны в 1969 году?",
+        "time_limit_sec": 15,
+        "options": [
+          {"text": "Базз Олдрин", "is_correct": false},
+          {"text": "Нил Армстронг", "is_correct": true},
+          {"text": "Майкл Коллинз", "is_correct": false},
+          {"text": "Юрий Гагарин", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Как назывался первый искусственный спутник Земли, запущенный в 1957 году?",
+        "time_limit_sec": 20,
+        "options": [
+          {"text": "«Союз-1»", "is_correct": false},
+          {"text": "«Восток-1»", "is_correct": false},
+          {"text": "«Спутник-1»", "is_correct": true},
+          {"text": "«Аполлон-11»", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Что такое световой год?",
+        "time_limit_sec": 25,
+        "options": [
+          {"text": "Расстояние, которое свет проходит за год", "is_correct": true},
+          {"text": "Время, за которое Земля облетает Солнце", "is_correct": false},
+          {"text": "Скорость света в вакууме", "is_correct": false},
+          {"text": "Возраст Вселенной", "is_correct": false}
+        ]
+      }
+    ]
+  },
+  {
+    "title": "IT и программирование",
+    "description": "10 вопросов о языках, сетях и инструментах разработчика: от Python до Docker.",
+    "questions": [
+      {
+        "text": "В честь чего назван язык программирования Python?",
+        "time_limit_sec": 20,
+        "options": [
+          {"text": "В честь змеи питона", "is_correct": false},
+          {"text": "В честь британской комик-группы Monty Python", "is_correct": true},
+          {"text": "В честь города в Греции", "is_correct": false},
+          {"text": "В честь одного из разработчиков по фамилии Питон", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Что означает код ответа HTTP 404?",
+        "time_limit_sec": 15,
+        "options": [
+          {"text": "Запрошенный ресурс не найден", "is_correct": true},
+          {"text": "Сервер перегружен", "is_correct": false},
+          {"text": "Доступ запрещён", "is_correct": false},
+          {"text": "Запрос выполнен успешно", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Кто создал ядро операционной системы Linux?",
+        "time_limit_sec": 15,
+        "options": [
+          {"text": "Билл Гейтс", "is_correct": false},
+          {"text": "Стив Джобс", "is_correct": false},
+          {"text": "Линус Торвальдс", "is_correct": true},
+          {"text": "Марк Цукерберг", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Как правильно хранить пароли пользователей в базе данных?",
+        "time_limit_sec": 20,
+        "options": [
+          {"text": "В открытом виде, чтобы их можно было напомнить", "is_correct": false},
+          {"text": "В виде хэша, например bcrypt", "is_correct": true}
+        ]
+      },
+      {
+        "text": "Чем WebSocket отличается от обычного HTTP-запроса?",
+        "time_limit_sec": 25,
+        "options": [
+          {"text": "Передаёт данные только в одну сторону", "is_correct": false},
+          {"text": "Работает только внутри одного компьютера", "is_correct": false},
+          {"text": "Каждый запрос требует нового подключения", "is_correct": false},
+          {"text": "Соединение остаётся открытым, и сервер сам может присылать сообщения", "is_correct": true}
+        ]
+      },
+      {
+        "text": "Какой порт по умолчанию используется для HTTPS?",
+        "time_limit_sec": 15,
+        "options": [
+          {"text": "21", "is_correct": false},
+          {"text": "80", "is_correct": false},
+          {"text": "443", "is_correct": true},
+          {"text": "8080", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Для чего нужен Docker?",
+        "time_limit_sec": 20,
+        "options": [
+          {"text": "Для запуска приложений в изолированных контейнерах", "is_correct": true},
+          {"text": "Для проверки орфографии в коде", "is_correct": false},
+          {"text": "Для создания дизайна сайтов", "is_correct": false},
+          {"text": "Для записи видео с экрана", "is_correct": false}
+        ]
+      },
+      {
+        "text": "По знаменитой истории 1947 года, в реле компьютера Harvard Mark II застряло насекомое — «первый баг». Какое?",
+        "time_limit_sec": 25,
+        "options": [
+          {"text": "Муха", "is_correct": false},
+          {"text": "Мотылёк", "is_correct": true},
+          {"text": "Комар", "is_correct": false},
+          {"text": "Таракан", "is_correct": false}
+        ]
+      },
+      {
+        "text": "Какая команда SQL выбирает данные из таблицы?",
+        "time_limit_sec": 15,
+        "options": [
+          {"text": "GET", "is_correct": false},
+          {"text": "FETCH", "is_correct": false},
+          {"text": "PULL", "is_correct": false},
+          {"text": "SELECT", "is_correct": true}
+        ]
+      },
+      {
+        "text": "Что делает балансировщик нагрузки, например nginx?",
+        "time_limit_sec": 25,
+        "options": [
+          {"text": "Распределяет запросы между несколькими копиями сервиса", "is_correct": true},
+          {"text": "Хранит базу данных", "is_correct": false},
+          {"text": "Компилирует код в программу", "is_correct": false},
+          {"text": "Шифрует жёсткий диск", "is_correct": false}
+        ]
+      }
+    ]
+  }
+]
