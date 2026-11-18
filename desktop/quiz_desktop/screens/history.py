@@ -137,7 +137,10 @@ class HistoryScreen(Screen):
         splitter = QSplitter()
         splitter.addWidget(self.list_view)
         splitter.addWidget(self.details_view)
-        splitter.setSizes([420, 540])
+        # Слева список игр: названию викторины нужно место, иначе оно обрезается («IT и …»).
+        splitter.setSizes([540, 560])
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 1)
 
         layout = QVBoxLayout(self.page)
         layout.addLayout(top)

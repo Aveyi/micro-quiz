@@ -247,3 +247,16 @@ def test_option_buttons_have_letters_but_keep_text(qtbot):
     options.show()
     for b in buttons:
         assert not b.grab().isNull()
+
+
+def test_long_option_text_does_not_widen_the_window(qtbot):
+    """Длинный вариант переносится внутри кнопки и не растягивает окно вширь."""
+    options = OptionButtons()
+    qtbot.addWidget(options)
+    long_text = "Соединение остаётся открытым, и сервер сам может присылать сообщения клиенту в любой момент"
+    options.set_options([{"option_id": i, "text": long_text} for i in range(4)])
+    assert options.minimumSizeHint().width() < 700
+    options.resize(900, 300)
+    options.show()
+    assert not options.grab().isNull()
+    assert all(b.text() == long_text for b in options.buttons.values())

@@ -1,7 +1,7 @@
 """Общие виджеты экранов игры (игрок и ведущий): таймер, варианты, таблица."""
 
 from PySide6.QtCore import QElapsedTimer, QRectF, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
@@ -10,6 +10,8 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QProgressBar,
     QPushButton,
+    QStyle,
+    QStyleOptionButton,
     QVBoxLayout,
     QWidget,
 )
@@ -101,17 +103,32 @@ class Countdown(QWidget):
 
 
 class OptionButton(QPushButton):
-    """Вариант ответа: цветная плашка с буквой A–D слева. Текст кнопки — только сам вариант,
-    букву дорисовываем поверх, поэтому button.text() остаётся текстом варианта."""
+    """Вариант ответа: цветная плашка с буквой A–D слева и текстом по центру.
+
+    Текст рисуем сами и переносим по словам: у обычной кнопки он не переносится, и длинный
+    вариант («Соединение остаётся открытым, и сервер сам может присылать сообщения») растягивал
+    бы окно вширь. button.text() остаётся текстом варианта: буква и перенос только на экране."""
 
     def __init__(self, text: str, letter: str):
         super().__init__(text)
         self._letter = letter
 
+    def minimumSizeHint(self) -> QSize:
+        return QSize(160, 84)  # ширину задаёт сетка, а не длина текста
+
+    def sizeHint(self) -> QSize:
+        return QSize(320, 84)
+
     def paintEvent(self, event) -> None:
-        super().paintEvent(event)
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Фон, скругление и состояния (наведение, нажатие) рисует стиль без текста.
+        option = QStyleOptionButton()
+        self.initStyleOption(option)
+        option.text = ""
+        self.style().drawControl(QStyle.ControlElement.CE_PushButton, option, painter, self)
+
         size = 32.0
         badge = QRectF(18, (self.height() - size) / 2, size, size)
         painter.setPen(Qt.PenStyle.NoPen)
@@ -123,6 +140,19 @@ class OptionButton(QPushButton):
         painter.setFont(font)
         painter.setPen(QColor("white"))
         painter.drawText(badge, Qt.AlignmentFlag.AlignCenter, self._letter)
+
+        # Текст: по центру свободной области справа от буквы, с переносом по словам.
+        # Длинный вариант не помещается в обычный размер, поэтому шрифт уменьшаем, пока текст не влезет.
+        area = QRectF(self.rect()).adjusted(64, 8, -24, -8)
+        flags = int(Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap)
+        text_font = QFont(self.font())
+        text_font.setBold(True)
+        for points in range(16, 9, -1):
+            text_font.setPointSize(points)
+            if QFontMetrics(text_font).boundingRect(area.toRect(), flags, self.text()).height() <= area.height():
+                break
+        painter.setFont(text_font)
+        painter.drawText(area, flags, self.text())
 
 
 class OptionButtons(QWidget):
@@ -166,7 +196,7 @@ class OptionButtons(QWidget):
         base = QColor(color)
         button.setStyleSheet(
             f"QPushButton {{ background: {color}; color: white; border: none; border-radius: 12px;"
-            f" padding: 12px 58px; font-weight: 700; }}"
+            f" padding: 0; font-weight: 700; }}"
             f"QPushButton:hover {{ background: {base.lighter(108).name()}; }}"
             f"QPushButton:pressed {{ background: {base.darker(115).name()}; }}"
             f"QPushButton:disabled {{ background: {color}; color: white; }}"
