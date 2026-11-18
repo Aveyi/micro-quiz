@@ -3,11 +3,12 @@
 import re
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout
 
 from quiz_desktop.api import ApiError
 from quiz_desktop.screens.base import Screen
+from quiz_desktop.theme import set_role, set_variant
+from quiz_desktop.ui import LogoMark, card
 
 # Те же правила, что проверяет content (docs/quiz-design.md, раздел 5.1).
 # Проверяем и здесь, чтобы показать ошибку сразу, не дожидаясь сервера;
@@ -35,56 +36,62 @@ class LoginScreen(Screen):
         super().__init__(window)
         self._register_mode = False
 
-        self.title = QLabel()
-        font = QFont()
-        font.setPointSize(18)
-        font.setBold(True)
-        self.title.setFont(font)
+        self.title = set_role(QLabel(), "h1")
         self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        subtitle = set_role(QLabel("Викторины, игры и результаты — в одном месте"), "muted")
+        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        subtitle.setWordWrap(True)
 
         self.username = QLineEdit()
+        self.username.setPlaceholderText("Например, teacher")
         self.password = QLineEdit()
+        self.password.setPlaceholderText("Не короче 8 символов")
         self.password.setEchoMode(QLineEdit.EchoMode.Password)
         self.confirm = QLineEdit()
+        self.confirm.setPlaceholderText("Ещё раз тот же пароль")
         self.confirm.setEchoMode(QLineEdit.EchoMode.Password)
-        self.confirm_label = QLabel("Повторите пароль:")
+        self.confirm_label = set_role(QLabel("Повторите пароль"), "muted")
         # Enter в любом поле — то же, что нажать кнопку.
         for edit in (self.username, self.password, self.confirm):
             edit.returnPressed.connect(self.submit)
 
-        self.error = QLabel()
-        self.error.setStyleSheet("color: #c00")
+        self.error = set_role(QLabel(), "error")
         self.error.setWordWrap(True)
 
-        self.submit_button = QPushButton()
+        self.submit_button = set_variant(QPushButton(), "primary")
+        self.submit_button.setMinimumHeight(44)
         self.submit_button.setDefault(True)
         self.submit_button.clicked.connect(self.submit)
-        # Плоская кнопка выглядит как ссылка: «Нет аккаунта? Зарегистрироваться».
-        self.switch_button = QPushButton()
-        self.switch_button.setFlat(True)
+        # Кнопка-ссылка: «Нет аккаунта? Зарегистрироваться».
+        self.switch_button = set_variant(QPushButton(), "link")
         self.switch_button.clicked.connect(lambda: self.set_register_mode(not self._register_mode))
-        back = QPushButton("← Назад")
-        back.setFlat(True)
+        back = set_variant(QPushButton("← Назад"), "ghost")
         back.clicked.connect(lambda: self.navigate("start"))
 
         form = QFormLayout()
-        form.addRow("Имя пользователя:", self.username)
-        form.addRow("Пароль:", self.password)
+        form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)  # подпись над полем
+        form.setVerticalSpacing(6)
+        form.addRow(set_role(QLabel("Имя пользователя"), "muted"), self.username)
+        form.addRow(set_role(QLabel("Пароль"), "muted"), self.password)
         form.addRow(self.confirm_label, self.confirm)
 
-        # Форма фиксированной ширины по центру окна.
-        box = QWidget()
-        box.setFixedWidth(380)
+        # Карточка фиксированной ширины по центру окна.
+        box = card()
+        box.setFixedWidth(440)
         box_layout = QVBoxLayout(box)
+        box_layout.setContentsMargins(36, 32, 36, 24)
+        box_layout.setSpacing(10)
+        box_layout.addWidget(LogoMark(52), alignment=Qt.AlignmentFlag.AlignCenter)
         box_layout.addWidget(self.title)
-        box_layout.addSpacing(16)
+        box_layout.addWidget(subtitle)
+        box_layout.addSpacing(8)
         box_layout.addLayout(form)
         box_layout.addWidget(self.error)
         box_layout.addWidget(self.submit_button)
-        box_layout.addWidget(self.switch_button)
-        box_layout.addWidget(back)
+        box_layout.addWidget(self.switch_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        box_layout.addWidget(back, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout(self.page)
         layout.addStretch()
         layout.addWidget(box, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addStretch()

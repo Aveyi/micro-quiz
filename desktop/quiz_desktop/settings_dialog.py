@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 
 from quiz_desktop.api import ApiClient, ApiError
 from quiz_desktop.settings import DEFAULT_SERVER_URL, normalize_server_url
+from quiz_desktop.theme import set_role, set_variant
 
 # Через nginx наружу открыты только /api/, /live/api/ и /live/ws, а /health
 # сервисов — нет (docs/quiz-design.md, раздел 8.2). Поэтому проверяем ручку
@@ -25,7 +26,7 @@ class SettingsDialog(QDialog):
     def __init__(self, server_url: str, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Настройки сервера")
-        self.setMinimumWidth(460)
+        self.setMinimumWidth(540)
         self.server_url = server_url
 
         self.url_edit = QLineEdit(server_url)
@@ -39,13 +40,20 @@ class SettingsDialog(QDialog):
         row.addWidget(self.url_edit)
         row.addWidget(self.check_button)
         form = QFormLayout()
-        form.addRow("Адрес сервера:", row)
+        form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)  # подпись над полем
+        form.addRow(set_role(QLabel("Адрес сервера"), "muted"), row)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        set_variant(buttons.button(QDialogButtonBox.StandardButton.Ok), "primary")
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
 
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(26, 24, 26, 20)
+        layout.setSpacing(12)
+        layout.addWidget(set_role(QLabel("Настройки сервера"), "h1"))
+        layout.addWidget(set_role(QLabel("Адрес сервера викторины, к которому подключается приложение."), "muted"))
+        layout.addSpacing(4)
         layout.addLayout(form)
         layout.addWidget(self.status_label)
         layout.addWidget(buttons)
@@ -82,8 +90,7 @@ class SettingsDialog(QDialog):
             self._show_status(f"По этому адресу отвечает не сервер викторины (код {error.status})", ok=False)
 
     def _show_status(self, text: str, ok: bool | None) -> None:
-        color = {True: "green", False: "#c00", None: "gray"}[ok]
-        self.status_label.setStyleSheet(f"color: {color}")
+        set_role(self.status_label, {True: "success", False: "error", None: "muted"}[ok])
         self.status_label.setText(text)
 
     def accept(self) -> None:

@@ -1,7 +1,7 @@
 """Общие виджеты экранов игры (игрок и ведущий): таймер, варианты, таблица."""
 
-from PySide6.QtCore import QElapsedTimer, Qt, QTimer, Signal
-from PySide6.QtGui import QFont
+from PySide6.QtCore import QElapsedTimer, QSize, Qt, QTimer, Signal
+from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
@@ -14,9 +14,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-# Цвета вариантов, как в Kahoot: по цвету вариант легко найти и на экране
-# ведущего, и у себя.
-OPTION_COLORS = ["#e21b3c", "#1368ce", "#d89e00", "#26890c"]
+from quiz_desktop.theme import OPTION_COLORS, OPTION_MUTED, repolish, set_role
+
+# Цвета вариантов, как в Kahoot (OPTION_COLORS в theme.py): по цвету вариант
+# легко найти и на экране ведущего, и у себя.
+
+# Медали первой тройки в таблице лидеров: золото, серебро, бронза.
+MEDAL_COLORS = {1: "#F5B301", 2: "#A7AEC8", 3: "#C9824B"}
 
 # Сообщения room_closed (раздел 4.4).
 ROOM_CLOSED_REASONS = {
@@ -26,7 +30,8 @@ ROOM_CLOSED_REASONS = {
 }
 
 
-def big_label(text: str = "", size: int = 18, bold: bool = True) -> QLabel:
+def big_label(text: str = "", size: int = 18, bold: bool = True, role: str | None = None) -> QLabel:
+    """Подпись по центру. role (theme.py) задаёт оформление темой, а не размером шрифта."""
     label = QLabel(text)
     font = QFont()
     font.setPointSize(size)
@@ -34,7 +39,12 @@ def big_label(text: str = "", size: int = 18, bold: bool = True) -> QLabel:
     label.setFont(font)
     label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     label.setWordWrap(True)
+    if role:
+        set_role(label, role)
     return label
+
+
+LOW_TIME_MS = 5000
 
 
 class Countdown(QWidget):
@@ -46,7 +56,7 @@ class Countdown(QWidget):
 
     def __init__(self):
         super().__init__()
-        self._label = big_label(size=28)
+        self._label = big_label(size=28, role="timer")
         self._bar = QProgressBar()
         self._bar.setTextVisible(False)
         self._clock = QElapsedTimer()
@@ -62,6 +72,7 @@ class Countdown(QWidget):
 
     def start(self, seconds: int) -> None:
         self._limit_ms = seconds * 1000
+        self._set_low(False)
         self._bar.setRange(0, self._limit_ms)
         self._clock.start()
         self._tick.start()
@@ -73,9 +84,18 @@ class Countdown(QWidget):
     def remaining_ms(self) -> int:
         return max(0, self._limit_ms - self._clock.elapsed())
 
+    def _set_low(self, low: bool) -> None:
+        if (self._label.property("low") == "true") == low:
+            return
+        for widget in (self._label, self._bar):
+            widget.setProperty("low", "true" if low else "false")
+            repolish(widget)
+
     def _update(self) -> None:
         left = self.remaining_ms()
         self._bar.setValue(left)
+        # Последние 5 секунд полоса и цифры краснеют.
+        self._set_low(left <= LOW_TIME_MS)
         # Округляем вверх: «1» на экране до самого конца последней секунды.
         self._label.setText(str((left + 999) // 1000))
         if left == 0:
@@ -99,7 +119,8 @@ class OptionButtons(QWidget):
         self.buttons = {}
         for i, option in enumerate(options):
             button = QPushButton(option["text"])
-            button.setMinimumHeight(72)
+            button.setMinimumHeight(84)
+            button.setCursor(Qt.CursorShape.PointingHandCursor)
             font = button.font()
             font.setPointSize(16)
             button.setFont(font)
@@ -115,18 +136,43 @@ class OptionButtons(QWidget):
         for option_id, button in self.buttons.items():
             button.setEnabled(False)
             if chosen is not None and option_id != chosen:
-                self._paint(button, "#9e9e9e")
+                self._paint(button, OPTION_MUTED)
 
     @staticmethod
     def _paint(button: QPushButton, color: str) -> None:
+        base = QColor(color)
         button.setStyleSheet(
-            f"QPushButton {{ background: {color}; color: white; border-radius: 8px; padding: 8px; }}"
+            f"QPushButton {{ background: {color}; color: white; border: none; border-radius: 16px;"
+            f" padding: 12px 18px; font-weight: 700; }}"
+            f"QPushButton:hover {{ background: {base.lighter(112).name()}; }}"
+            f"QPushButton:pressed {{ background: {base.darker(115).name()}; }}"
             f"QPushButton:disabled {{ background: {color}; color: white; }}"
         )
 
 
+def _medal_icon(rank: int) -> QIcon:
+    """Цветной кружок для первой тройки; у остальных пустое место того же размера,
+    чтобы все строки таблицы были выровнены."""
+    pixmap = QPixmap(18, 18)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    color = MEDAL_COLORS.get(rank)
+    if color:
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(color))
+        painter.drawEllipse(1, 1, 16, 16)
+        painter.end()
+    return QIcon(pixmap)
+
+
 class Leaderboard(QListWidget):
-    """Таблица лидеров: «1. Вася — 1840». Свою строку выделяем жирным."""
+    """Таблица лидеров: «1. Вася — 1840». Свою строку выделяем жирным,
+    первую тройку — цветной медалью."""
+
+    def __init__(self):
+        super().__init__()
+        self.setIconSize(QSize(18, 18))
 
     def show_entries(self, entries: list[dict], me: int | None = None) -> None:
         self.clear()
@@ -134,7 +180,7 @@ class Leaderboard(QListWidget):
             text = f"{e['rank']}. {e['nickname']} — {e['score']}"
             if e.get("left"):
                 text += " (выбыл)"
-            item = QListWidgetItem(text)
+            item = QListWidgetItem(_medal_icon(e["rank"]), text)
             if e["player_id"] == me:
                 font = item.font()
                 font.setBold(True)

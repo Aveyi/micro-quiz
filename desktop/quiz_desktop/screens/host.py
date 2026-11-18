@@ -28,6 +28,7 @@ from quiz_desktop.screens.game_common import (
     OptionButtons,
     big_label,
 )
+from quiz_desktop.theme import set_role, set_variant
 
 # Куда возвращаться после игры: к списку викторин, если он уже есть.
 BACK_SCREENS = ("quizzes", "start")
@@ -46,7 +47,7 @@ class HostScreen(Screen):
         self._build_result()
         self._build_final()
 
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout(self.page)
         layout.addWidget(self.views)
 
     def _reset_game_state(self) -> None:
@@ -62,8 +63,8 @@ class HostScreen(Screen):
 
     def _build_message(self) -> None:
         """Служебный вид: «создаём комнату…» или ошибка с кнопкой «Назад»."""
-        self.m_text = big_label(size=18, bold=False)
-        self.m_back = QPushButton("← К викторинам")
+        self.m_text = big_label(size=18, bold=False, role="h2")
+        self.m_back = set_variant(QPushButton("← К викторинам"), "primary")
         self.m_back.clicked.connect(self.go_back)
         view = QWidget()
         layout = QVBoxLayout(view)
@@ -75,20 +76,21 @@ class HostScreen(Screen):
         self.views.addWidget(view)
 
     def _build_lobby(self) -> None:
-        self.l_title = big_label(size=16, bold=False)
-        self.l_code = big_label(size=48)
+        self.l_title = big_label(size=16, bold=False, role="h2")
+        self.l_code = big_label(size=48, role="code")
         self.l_code.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        self.l_count = QLabel()
+        self.l_count = set_role(QLabel(), "muted")
         self.l_players = QListWidget()
-        self.start_button = QPushButton("Начать игру")
-        self.start_button.setMinimumHeight(44)
+        self.start_button = set_variant(QPushButton("Начать игру"), "primary")
+        self.start_button.setMinimumHeight(48)
+        self.start_button.setMinimumWidth(200)
         self.start_button.clicked.connect(self.start_game)
 
         view = QWidget()
         layout = QVBoxLayout(view)
         layout.addWidget(self.l_title)
-        layout.addWidget(big_label("Код комнаты — продиктуйте его игрокам:", 12, bold=False))
-        layout.addWidget(self.l_code)
+        layout.addWidget(big_label("Код комнаты — продиктуйте его игрокам:", 12, bold=False, role="muted"))
+        layout.addWidget(self.l_code, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.l_count)
         layout.addWidget(self.l_players)
         buttons = QHBoxLayout()
@@ -100,11 +102,11 @@ class HostScreen(Screen):
         self.views.addWidget(view)
 
     def _build_question(self) -> None:
-        self.q_header = big_label(size=12, bold=False)
-        self.q_text = big_label(size=22)
+        self.q_header = big_label(size=12, bold=False, role="muted")
+        self.q_text = big_label(size=22, role="h1")
         self.countdown = Countdown()
         self.options = OptionButtons()  # ведущий только показывает варианты
-        self.q_progress = big_label(size=16, bold=False)
+        self.q_progress = big_label(size=16, bold=False, role="h2")
 
         view = QWidget()
         layout = QVBoxLayout(view)
@@ -118,18 +120,19 @@ class HostScreen(Screen):
         self.views.addWidget(view)
 
     def _build_result(self) -> None:
-        self.r_header = big_label(size=16)
+        self.r_header = big_label(size=16, role="h1")
         self.r_stats = AnswerStats()
         self.r_board = Leaderboard()
-        self.next_button = QPushButton("Следующий вопрос")
-        self.next_button.setMinimumHeight(44)
+        self.next_button = set_variant(QPushButton("Следующий вопрос"), "primary")
+        self.next_button.setMinimumHeight(48)
+        self.next_button.setMinimumWidth(200)
         self.next_button.clicked.connect(self.next_question)
 
         view = QWidget()
         layout = QVBoxLayout(view)
         layout.addWidget(self.r_header)
         layout.addWidget(self.r_stats)
-        layout.addWidget(QLabel("Таблица лидеров (первые 10):"))
+        layout.addWidget(set_role(QLabel("Таблица лидеров (первые 10)"), "section"))
         layout.addWidget(self.r_board, stretch=1)
         buttons = QHBoxLayout()
         buttons.addWidget(self._close_button())
@@ -140,10 +143,11 @@ class HostScreen(Screen):
         self.views.addWidget(view)
 
     def _build_final(self) -> None:
-        self.f_title = big_label(size=26)
-        self.f_subtitle = big_label(size=14, bold=False)
+        self.f_title = big_label(size=26, role="title")
+        self.f_subtitle = big_label(size=14, bold=False, role="muted")
         self.f_board = Leaderboard()
-        done = QPushButton("Готово")
+        done = set_variant(QPushButton("Готово"), "primary")
+        done.setMinimumWidth(180)
         done.clicked.connect(self.go_back)
         view = QWidget()
         layout = QVBoxLayout(view)
@@ -155,7 +159,7 @@ class HostScreen(Screen):
         self.views.addWidget(view)
 
     def _close_button(self) -> QPushButton:
-        button = QPushButton("Закрыть комнату")
+        button = set_variant(QPushButton("Закрыть комнату"), "danger")
         button.clicked.connect(self.close_room)
         return button
 

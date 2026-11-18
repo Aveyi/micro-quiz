@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QApplication
 
 from quiz_desktop.main_window import MainWindow
 from quiz_desktop.settings import AppSettings
+from quiz_desktop.theme import apply_theme
 
 
 def main() -> int:
@@ -19,7 +20,13 @@ def main() -> int:
     if translator.load(QLocale("ru"), "qtbase", "_", QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)):
         app.installTranslator(translator)
 
-    window = MainWindow(AppSettings())
+    settings = AppSettings()
+    # Тему применяем до создания окна: размеры виджетов считаются уже со стилями
+    # (отступы полей, высота кнопок), иначе строки форм получаются сплюснутыми.
+    apply_theme(app, settings.theme)
+    window = MainWindow(settings)
+    # «Как в системе»: при смене темы в Windows или macOS приложение подстраивается само.
+    app.styleHints().colorSchemeChanged.connect(lambda _: settings.theme == "auto" and window.apply_theme())
     window.show()
     # exec() крутит цикл событий Qt, пока не закроют последнее окно.
     return app.exec()

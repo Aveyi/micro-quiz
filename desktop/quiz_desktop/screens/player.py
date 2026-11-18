@@ -22,6 +22,8 @@ from PySide6.QtWidgets import (
 from quiz_desktop.live_client import LiveClient
 from quiz_desktop.screens.base import Screen
 from quiz_desktop.screens.game_common import ROOM_CLOSED_REASONS, Countdown, Leaderboard, OptionButtons, big_label
+from quiz_desktop.theme import set_role, set_variant
+from quiz_desktop.ui import LogoMark, card
 
 MAX_NICKNAME = 20  # раздел 2 дизайна; сервер проверяет то же самое
 
@@ -39,7 +41,7 @@ class PlayerScreen(Screen):
         self._build_result()
         self._build_final()
 
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout(self.page)
         layout.addWidget(self.views)
 
     def _reset_game_state(self) -> None:
@@ -60,12 +62,11 @@ class PlayerScreen(Screen):
         self.nick_edit = QLineEdit()
         self.nick_edit.setPlaceholderText("как вас показывать в таблице")
         self.nick_edit.setMaxLength(MAX_NICKNAME)
-        self.join_button = QPushButton("Войти")
-        self.join_button.setMinimumHeight(40)
-        self.form_error = QLabel()
-        self.form_error.setStyleSheet("color: #c62828")
+        self.join_button = set_variant(QPushButton("Войти"), "primary")
+        self.join_button.setMinimumHeight(46)
+        self.form_error = set_role(QLabel(), "error")
         self.form_error.setWordWrap(True)
-        back = QPushButton("← Назад")
+        back = set_variant(QPushButton("← Назад"), "ghost")
 
         for edit in (self.code_edit, self.nick_edit):
             edit.textChanged.connect(self._update_join_button)
@@ -76,42 +77,54 @@ class PlayerScreen(Screen):
         back.clicked.connect(lambda: self.navigate("start"))
 
         form = QFormLayout()
-        form.addRow("Код комнаты:", self.code_edit)
-        form.addRow("Ник:", self.nick_edit)
+        form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)  # подпись над полем
+        form.setVerticalSpacing(6)
+        form.addRow(set_role(QLabel("Код комнаты"), "muted"), self.code_edit)
+        form.addRow(set_role(QLabel("Ник"), "muted"), self.nick_edit)
+
+        # Форма в карточке по центру, как на экране входа ведущего.
+        box = card()
+        box.setFixedWidth(440)
+        box_layout = QVBoxLayout(box)
+        box_layout.setContentsMargins(36, 32, 36, 24)
+        box_layout.setSpacing(10)
+        box_layout.addWidget(LogoMark(52), alignment=Qt.AlignmentFlag.AlignCenter)
+        box_layout.addWidget(big_label("Вход в комнату", 24, role="h1"))
+        box_layout.addWidget(big_label("Код вам скажет ведущий", 12, bold=False, role="muted"))
+        box_layout.addSpacing(8)
+        box_layout.addLayout(form)
+        box_layout.addWidget(self.form_error)
+        box_layout.addWidget(self.join_button)
+        box_layout.addWidget(back, alignment=Qt.AlignmentFlag.AlignCenter)
 
         view = QWidget()
         layout = QVBoxLayout(view)
         layout.addStretch()
-        layout.addWidget(big_label("Вход в комнату", 24))
-        layout.addSpacing(16)
-        layout.addLayout(form)
-        layout.addWidget(self.join_button)
-        layout.addWidget(self.form_error)
-        layout.addWidget(back, alignment=Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(box, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addStretch()
         self.form_view = view
         self.views.addWidget(view)
         self._update_join_button()
 
     def _build_lobby(self) -> None:
-        self.lobby_title = big_label(size=20)
+        self.lobby_title = big_label(size=20, role="h1")
         self.lobby_players = QListWidget()
         view = QWidget()
         layout = QVBoxLayout(view)
         layout.addWidget(self.lobby_title)
-        layout.addWidget(big_label("Ждём, пока ведущий начнёт игру…", 14, bold=False))
-        layout.addWidget(QLabel("В комнате:"))
+        layout.addWidget(big_label("Ждём, пока ведущий начнёт игру…", 14, bold=False, role="muted"))
+        layout.addWidget(set_role(QLabel("В комнате"), "section"))
         layout.addWidget(self.lobby_players)
         layout.addWidget(self._leave_button(), alignment=Qt.AlignmentFlag.AlignLeft)
         self.lobby_view = view
         self.views.addWidget(view)
 
     def _build_question(self) -> None:
-        self.q_header = big_label(size=12, bold=False)
-        self.q_text = big_label(size=22)
+        self.q_header = big_label(size=12, bold=False, role="muted")
+        self.q_text = big_label(size=22, role="h1")
         self.countdown = Countdown()
         self.options = OptionButtons()
-        self.q_status = big_label(size=14, bold=False)
+        self.q_status = big_label(size=14, bold=False, role="muted")
         self.countdown.expired.connect(self._on_time_up)
         self.options.chosen.connect(self.answer)
 
@@ -127,27 +140,28 @@ class PlayerScreen(Screen):
         self.views.addWidget(view)
 
     def _build_result(self) -> None:
-        self.r_verdict = big_label(size=26)
-        self.r_points = big_label(size=16, bold=False)
-        self.r_correct = big_label(size=14, bold=False)
+        self.r_verdict = big_label(size=26, role="title")
+        self.r_points = big_label(size=16, bold=False, role="h2")
+        self.r_correct = big_label(size=14, bold=False, role="muted")
         self.r_board = Leaderboard()
         view = QWidget()
         layout = QVBoxLayout(view)
         layout.addWidget(self.r_verdict)
         layout.addWidget(self.r_points)
         layout.addWidget(self.r_correct)
-        layout.addWidget(QLabel("Таблица лидеров (первые 10):"))
+        layout.addWidget(set_role(QLabel("Таблица лидеров (первые 10)"), "section"))
         layout.addWidget(self.r_board)
-        layout.addWidget(big_label("Ждём следующий вопрос от ведущего…", 12, bold=False))
+        layout.addWidget(big_label("Ждём следующий вопрос от ведущего…", 12, bold=False, role="muted"))
         layout.addWidget(self._leave_button(), alignment=Qt.AlignmentFlag.AlignLeft)
         self.result_view = view
         self.views.addWidget(view)
 
     def _build_final(self) -> None:
-        self.f_title = big_label(size=26)
-        self.f_subtitle = big_label(size=16, bold=False)
+        self.f_title = big_label(size=26, role="title")
+        self.f_subtitle = big_label(size=16, bold=False, role="muted")
         self.f_board = Leaderboard()
-        home = QPushButton("На главную")
+        home = set_variant(QPushButton("На главную"), "primary")
+        home.setMinimumWidth(180)
         home.clicked.connect(lambda: self.navigate("start"))
         view = QWidget()
         layout = QVBoxLayout(view)
@@ -159,7 +173,7 @@ class PlayerScreen(Screen):
         self.views.addWidget(view)
 
     def _leave_button(self) -> QPushButton:
-        button = QPushButton("Выйти из игры")
+        button = set_variant(QPushButton("Выйти из игры"), "danger")
         button.clicked.connect(self.leave)
         return button
 
@@ -299,11 +313,11 @@ class PlayerScreen(Screen):
         you = data["you"]
         if you["correct"]:
             self.r_verdict.setText("Верно!")
-            self.r_verdict.setStyleSheet("color: #2e7d32")
+            set_role(self.r_verdict, "title-success")
             self.r_points.setText(f"+{you['points']} очков")
         else:
             self.r_verdict.setText("Неверно" if self.answered is not None else "Нет ответа")
-            self.r_verdict.setStyleSheet("color: #c62828")
+            set_role(self.r_verdict, "title-error")
             self.r_points.setText("0 очков")
         self.r_points.setText(self.r_points.text() + f"  ·  счёт {you['score']}  ·  место {you['rank']}")
         correct = next((o["text"] for o in self.question["options"] if o["option_id"] == data["correct_option_id"]), "?")

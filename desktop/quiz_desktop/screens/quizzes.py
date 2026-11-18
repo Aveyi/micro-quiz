@@ -7,7 +7,6 @@ GET /api/quizzes и DELETE /api/quizzes/{id} — content (docs/quiz-design.md, 5
 from datetime import datetime
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
@@ -23,6 +22,7 @@ from PySide6.QtWidgets import (
 
 from quiz_desktop.api import ApiError
 from quiz_desktop.screens.base import Screen
+from quiz_desktop.theme import set_role, set_variant
 
 
 def format_time(value: str) -> str:
@@ -41,21 +41,22 @@ class QuizzesScreen(Screen):
         # на первый запрос может прийти позже второго — его нужно отбросить.
         self._load_seq = 0
 
-        title = QLabel("Мои викторины")
-        font = QFont()
-        font.setPointSize(18)
-        font.setBold(True)
-        title.setFont(font)
+        title = set_role(QLabel("Мои викторины"), "h1")
+        subtitle = set_role(QLabel("Выберите викторину, чтобы провести игру, изменить или удалить её"), "muted")
+        heading = QVBoxLayout()
+        heading.setSpacing(2)
+        heading.addWidget(title)
+        heading.addWidget(subtitle)
 
-        self.create_button = QPushButton("+ Создать")
+        self.create_button = set_variant(QPushButton("+ Создать"), "primary")
         self.create_button.clicked.connect(lambda: self.navigate("editor", quiz_id=None))
         self.history_button = QPushButton("История игр")
         self.history_button.clicked.connect(lambda: self.navigate("history"))
-        self.refresh_button = QPushButton("Обновить")
+        self.refresh_button = set_variant(QPushButton("Обновить"), "ghost")
         self.refresh_button.clicked.connect(lambda: self.load())
 
         top = QHBoxLayout()
-        top.addWidget(title)
+        top.addLayout(heading)
         top.addStretch()
         top.addWidget(self.history_button)
         top.addWidget(self.refresh_button)
@@ -67,6 +68,8 @@ class QuizzesScreen(Screen):
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.verticalHeader().hide()
+        self.table.verticalHeader().setDefaultSectionSize(54)
+        self.table.setShowGrid(False)
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
@@ -75,21 +78,20 @@ class QuizzesScreen(Screen):
         self.table.cellDoubleClicked.connect(lambda row, _: self.edit_selected())
 
         # Вместо таблицы показываем текст, когда викторин нет, идёт загрузка или ошибка.
-        self.message = QLabel()
+        self.message = set_role(QLabel(), "h2")
         self.message.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.message.setWordWrap(True)
         self.content = QStackedWidget()
         self.content.addWidget(self.table)
         self.content.addWidget(self.message)
 
-        self.play_button = QPushButton("▶ Провести игру")
+        self.play_button = set_variant(QPushButton("▶ Провести игру"), "primary")
         self.play_button.clicked.connect(self.play_selected)
         self.edit_button = QPushButton("Изменить")
         self.edit_button.clicked.connect(self.edit_selected)
-        self.delete_button = QPushButton("Удалить")
+        self.delete_button = set_variant(QPushButton("Удалить"), "danger")
         self.delete_button.clicked.connect(self.delete_selected)
-        self.status = QLabel()
-        self.status.setStyleSheet("color: #c00")
+        self.status = set_role(QLabel(), "error")
 
         bottom = QHBoxLayout()
         bottom.addWidget(self.status, stretch=1)
@@ -97,7 +99,8 @@ class QuizzesScreen(Screen):
         bottom.addWidget(self.edit_button)
         bottom.addWidget(self.play_button)
 
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout(self.page)
+        layout.setSpacing(14)
         layout.addLayout(top)
         layout.addWidget(self.content, stretch=1)
         layout.addLayout(bottom)

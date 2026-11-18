@@ -5,7 +5,6 @@
 """
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QButtonGroup,
     QFormLayout,
@@ -29,6 +28,8 @@ from PySide6.QtWidgets import (
 
 from quiz_desktop.api import ApiError
 from quiz_desktop.screens.base import Screen
+from quiz_desktop.theme import set_role, set_variant
+from quiz_desktop.ui import card
 
 # Правила те же, что проверяет content (docs/quiz-design.md, раздел 5.1).
 # Здесь они нужны, чтобы показать ошибку сразу и с номером вопроса;
@@ -111,14 +112,11 @@ class EditorScreen(Screen):
         self._filling = False  # заполняем поля из данных — это не правка пользователя
 
         # --- шапка ---
-        self.heading = QLabel()
-        font = QFont()
-        font.setPointSize(18)
-        font.setBold(True)
-        self.heading.setFont(font)
-        self.back_button = QPushButton("← К викторинам")
+        self.heading = set_role(QLabel(), "h1")
+        self.back_button = set_variant(QPushButton("← К викторинам"), "ghost")
         self.back_button.clicked.connect(self.go_back)
-        self.save_button = QPushButton("Сохранить")
+        self.save_button = set_variant(QPushButton("Сохранить"), "primary")
+        self.save_button.setMinimumWidth(140)
         self.save_button.setDefault(True)
         self.save_button.clicked.connect(self.save)
         top = QHBoxLayout()
@@ -134,15 +132,18 @@ class EditorScreen(Screen):
         self.description.setMaxLength(MAX_DESCRIPTION)
         self.description.setPlaceholderText("Необязательно")
         meta = QFormLayout()
-        meta.addRow("Название:", self.title)
-        meta.addRow("Описание:", self.description)
+        meta.setVerticalSpacing(10)
+        meta.addRow(set_role(QLabel("Название"), "muted"), self.title)
+        meta.addRow(set_role(QLabel("Описание"), "muted"), self.description)
 
         # --- слева: список вопросов ---
         self.question_list = QListWidget()
+        # Длинные названия обрезаются троеточием, а не уезжают за край списка.
+        self.question_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.question_list.currentRowChanged.connect(self._on_question_selected)
         self.add_question_button = QPushButton("+ Вопрос")
         self.add_question_button.clicked.connect(self.add_question)
-        self.remove_question_button = QPushButton("Удалить")
+        self.remove_question_button = set_variant(QPushButton("Удалить"), "danger")
         self.remove_question_button.clicked.connect(self.remove_question)
         self.up_button = QToolButton()
         self.up_button.setText("↑")
@@ -158,21 +159,37 @@ class EditorScreen(Screen):
         list_buttons.addStretch()
         list_buttons.addWidget(self.up_button)
         list_buttons.addWidget(self.down_button)
-        left = QWidget()
+        # Обе половины — карточки: список вопросов и форма выбранного вопроса.
+        left = card(shadow=False)
         left_layout = QVBoxLayout(left)
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.addWidget(QLabel("Вопросы:"))
+        left_layout.setContentsMargins(16, 16, 16, 16)
+        left_layout.addWidget(set_role(QLabel("Вопросы"), "section"))
         left_layout.addWidget(self.question_list, stretch=1)
         left_layout.addLayout(list_buttons)
 
         # --- справа: выбранный вопрос ---
-        self.q_number = QLabel()
+        self.q_number = set_role(QLabel(), "h2")
         self.q_text = QPlainTextEdit()
         self.q_text.setPlaceholderText("Текст вопроса")
         self.q_text.setFixedHeight(80)
         self.q_time = QSpinBox()
         self.q_time.setRange(MIN_TIME, MAX_TIME)
         self.q_time.setSuffix(" с")
+        self.q_time.setSingleStep(5)
+        # Свои кнопки «−» и «+» вместо стрелок поля: стрелки не вписываются в тему.
+        self.q_time.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
+        self.q_time.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.q_time.setFixedWidth(96)
+        minus, plus = QToolButton(), QToolButton()
+        minus.setText("−")
+        plus.setText("+")
+        minus.clicked.connect(self.q_time.stepDown)
+        plus.clicked.connect(self.q_time.stepUp)
+        time_row = QHBoxLayout()
+        time_row.addWidget(minus)
+        time_row.addWidget(self.q_time)
+        time_row.addWidget(plus)
+        time_row.addStretch()
 
         # Радиокнопки в одной группе: правильным может быть только один вариант.
         self._correct_group = QButtonGroup(self)
@@ -189,20 +206,22 @@ class EditorScreen(Screen):
             options.addWidget(row.text, i, 1)
             options.addWidget(row.remove, i, 2)
             row.remove.clicked.connect(lambda _=False, i=i: self.remove_option(i))
-        self.add_option_button = QPushButton("+ Вариант")
+        self.add_option_button = set_variant(QPushButton("+ Вариант"), "link")
         self.add_option_button.clicked.connect(self.add_option)
 
         form = QFormLayout()
         form.addRow(self.q_number)
-        form.addRow("Вопрос:", self.q_text)
-        form.addRow("Время на ответ:", self.q_time)
-        form.addRow(QLabel("Варианты ответа (отметьте правильный):"))
+        form.setVerticalSpacing(10)
+        form.addRow(set_role(QLabel("Вопрос"), "muted"), self.q_text)
+        form.addRow(set_role(QLabel("Время на ответ"), "muted"), time_row)
+        form.addRow(set_role(QLabel("Варианты ответа — отметьте правильный"), "section"))
+        options.setVerticalSpacing(8)
         form.addRow(options_box)
         form.addRow(self.add_option_button)
         self.add_option_button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        right = QWidget()
+        right = card(shadow=False)
         right_layout = QVBoxLayout(right)
-        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setContentsMargins(20, 18, 20, 18)
         right_layout.addLayout(form)
         # Растяжка снизу прижимает поля к верху, а не раздвигает их по высоте.
         right_layout.addStretch()
@@ -212,8 +231,7 @@ class EditorScreen(Screen):
         splitter.addWidget(right)
         splitter.setSizes([320, 640])
 
-        self.error = QLabel()
-        self.error.setStyleSheet("color: #c00")
+        self.error = set_role(QLabel(), "error")
         self.error.setWordWrap(True)
 
         editor = QWidget()
@@ -225,14 +243,15 @@ class EditorScreen(Screen):
         self._editor_widget = editor
 
         # Пока викторина грузится или не загрузилась — сообщение вместо формы.
-        self.message = QLabel()
+        self.message = set_role(QLabel(), "h2")
         self.message.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.message.setWordWrap(True)
         self.view = QStackedWidget()
         self.view.addWidget(editor)
         self.view.addWidget(self.message)
 
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout(self.page)
+        layout.setSpacing(14)
         layout.addLayout(top)
         layout.addWidget(self.view, stretch=1)
 
@@ -346,7 +365,7 @@ class EditorScreen(Screen):
     @staticmethod
     def _list_title(n: int, q: dict) -> str:
         text = " ".join(q["text"].split()) or "(без текста)"
-        return f"{n}. {text[:40] + '…' if len(text) > 40 else text}"
+        return f"{n}. {text[:32] + '…' if len(text) > 32 else text}"
 
     def _rebuild_list(self, select: int) -> None:
         self.question_list.blockSignals(True)

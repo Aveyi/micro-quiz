@@ -8,7 +8,7 @@ GET /live/api/games и /live/api/games/{id} — live (docs/quiz-design.md, 5.3).
 from datetime import datetime
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 from quiz_desktop.api import ApiError
 from quiz_desktop.screens.base import Screen
 from quiz_desktop.screens.quizzes import format_time
+from quiz_desktop.theme import palette, set_role, set_variant
 
 STATUS_NAMES = {
     "lobby": "в лобби",
@@ -54,6 +55,8 @@ def _table(headers: list[str], stretch: int) -> QTableWidget:
     table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
     table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
     table.verticalHeader().hide()
+    table.verticalHeader().setDefaultSectionSize(44)
+    table.setShowGrid(False)
     header = table.horizontalHeader()
     for col in range(len(headers)):
         mode = QHeaderView.ResizeMode.Stretch if col == stretch else QHeaderView.ResizeMode.ResizeToContents
@@ -69,6 +72,8 @@ def _item(text, center: bool = False) -> QTableWidgetItem:
 
 
 class HistoryScreen(Screen):
+    MAX_WIDTH = 1300  # две таблицы рядом: им нужно больше места
+
     def __init__(self, window):
         super().__init__(window)
         self._games: list[dict] = []
@@ -79,12 +84,8 @@ class HistoryScreen(Screen):
         self._list_seq = 0
         self._details_seq = 0
 
-        title = QLabel("История игр")
-        font = QFont()
-        font.setPointSize(18)
-        font.setBold(True)
-        title.setFont(font)
-        back = QPushButton("← К викторинам")
+        title = set_role(QLabel("История игр"), "h1")
+        back = set_variant(QPushButton("← К викторинам"), "ghost")
         back.clicked.connect(lambda: self.navigate("quizzes"))
         self.refresh_button = QPushButton("Обновить")
         self.refresh_button.clicked.connect(lambda: self.load())
@@ -97,7 +98,7 @@ class HistoryScreen(Screen):
         # --- слева: список игр ---
         self.games = _table(["Викторина", "Дата", "Статус", "Игроков"], stretch=0)
         self.games.itemSelectionChanged.connect(self._on_game_selected)
-        self.list_message = QLabel()
+        self.list_message = set_role(QLabel(), "h2")
         self.list_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.list_message.setWordWrap(True)
         self.list_view = QStackedWidget()
@@ -105,17 +106,12 @@ class HistoryScreen(Screen):
         self.list_view.addWidget(self.list_message)
 
         # --- справа: результаты выбранной игры ---
-        self.d_title = QLabel()
-        bold = QFont()
-        bold.setPointSize(14)
-        bold.setBold(True)
-        self.d_title.setFont(bold)
-        self.d_info = QLabel()
+        self.d_title = set_role(QLabel(), "h1")
+        self.d_info = set_role(QLabel(), "muted")
         self.d_info.setWordWrap(True)
         self.players = _table(["Место", "Игрок", "Очки"], stretch=1)
         self.questions = _table(["№", "Вопрос", "Ответили", "Верно", "Доля верных"], stretch=1)
-        self.d_note = QLabel()
-        self.d_note.setStyleSheet("color: gray")
+        self.d_note = set_role(QLabel(), "muted")
         self.d_note.setWordWrap(True)
 
         details = QWidget()
@@ -123,13 +119,13 @@ class HistoryScreen(Screen):
         d_layout.setContentsMargins(0, 0, 0, 0)
         d_layout.addWidget(self.d_title)
         d_layout.addWidget(self.d_info)
-        d_layout.addWidget(QLabel("Игроки:"))
+        d_layout.addWidget(set_role(QLabel("Игроки"), "section"))
         d_layout.addWidget(self.players, stretch=1)
-        d_layout.addWidget(QLabel("Вопросы:"))
+        d_layout.addWidget(set_role(QLabel("Вопросы"), "section"))
         d_layout.addWidget(self.questions, stretch=1)
         d_layout.addWidget(self.d_note)
 
-        self.details_message = QLabel("Выберите игру слева")
+        self.details_message = set_role(QLabel("Выберите игру слева"), "h2")
         self.details_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.details_message.setWordWrap(True)
         self.details_view = QStackedWidget()
@@ -143,7 +139,7 @@ class HistoryScreen(Screen):
         splitter.addWidget(self.details_view)
         splitter.setSizes([420, 540])
 
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout(self.page)
         layout.addLayout(top)
         layout.addWidget(splitter, stretch=1)
 
@@ -174,7 +170,9 @@ class HistoryScreen(Screen):
             title.setData(Qt.ItemDataRole.UserRole, game["id"])
             self.games.setItem(row, 0, title)
             self.games.setItem(row, 1, _item(format_time(game["created_at"])))
-            self.games.setItem(row, 2, _item(STATUS_NAMES.get(game["status"], game["status"])))
+            status = _item(STATUS_NAMES.get(game["status"], game["status"]))
+            status.setForeground(QColor(self._status_color(game["status"])))
+            self.games.setItem(row, 2, status)
             self.games.setItem(row, 3, _item(game["player_count"], center=True))
         self.games.blockSignals(False)
 
@@ -186,6 +184,12 @@ class HistoryScreen(Screen):
         ids = [g["id"] for g in games]
         # После обновления остаёмся на той же игре, иначе выбираем самую новую.
         self.games.selectRow(ids.index(selected) if selected in ids else 0)
+
+    @staticmethod
+    def _status_color(status: str) -> str:
+        """Цвет статуса игры: завершённая — зелёным, идущая — жёлтым, остальные приглушены."""
+        p = palette()
+        return {"finished": p.success, "running": p.warning}.get(status, p.muted)
 
     def _on_list_failed(self, error: ApiError) -> None:
         if error.status == 401:

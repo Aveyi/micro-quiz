@@ -8,6 +8,8 @@ from urllib.parse import urlsplit
 
 from PySide6.QtCore import QSettings
 
+from quiz_desktop.theme import THEME_MODES
+
 # Наружу открыт только nginx (docs/quiz-design.md, раздел 8.4).
 DEFAULT_SERVER_URL = "http://localhost:8000"
 
@@ -60,4 +62,17 @@ class AppSettings:
     @last_username.setter
     def last_username(self, value: str) -> None:
         self._s.setValue("last_username", value)
+        self._s.sync()
+
+    @property
+    def theme(self) -> str:
+        """Тема оформления: auto (как в системе), light или dark."""
+        value = self._s.value("theme", "auto", type=str)
+        return value if value in THEME_MODES else "auto"
+
+    @theme.setter
+    def theme(self, value: str) -> None:
+        if value not in THEME_MODES:
+            raise ValueError(f"неизвестная тема: {value!r}")
+        self._s.setValue("theme", value)
         self._s.sync()

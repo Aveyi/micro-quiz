@@ -1,6 +1,7 @@
 """Главное окно: экраны, меню, строка состояния."""
 
-from PySide6.QtWidgets import QLabel, QMainWindow, QStackedWidget
+from PySide6.QtGui import QActionGroup, QColor
+from PySide6.QtWidgets import QApplication, QFrame, QGraphicsDropShadowEffect, QLabel, QMainWindow, QStackedWidget
 
 from quiz_desktop.api import ApiClient
 from quiz_desktop.live_client import live_http_base
@@ -14,6 +15,7 @@ from quiz_desktop.screens.quizzes import QuizzesScreen
 from quiz_desktop.screens.start import StartScreen
 from quiz_desktop.settings import AppSettings
 from quiz_desktop.settings_dialog import SettingsDialog
+from quiz_desktop.theme import THEME_MODES, apply_theme, palette
 
 
 class MainWindow(QMainWindow):
@@ -29,6 +31,7 @@ class MainWindow(QMainWindow):
         self.resize(960, 640)
 
         self._stack = QStackedWidget()
+        self._stack.setObjectName("root")  # фон окна задаёт тема (theme.py)
         self.setCentralWidget(self._stack)
         self._screens: dict[str, Screen] = {}
 
@@ -87,6 +90,35 @@ class MainWindow(QMainWindow):
         self._logout_action = menu.addAction("Выйти из &аккаунта", self.logout)
         menu.addSeparator()
         menu.addAction("&Выход", self.close)
+
+        view = self.menuBar().addMenu("&Вид")
+        group = QActionGroup(self)  # в группе отмечен ровно один вариант
+        self._theme_actions = {}
+        for mode, title in (("auto", "Тема: как в системе"), ("light", "Тема: светлая"), ("dark", "Тема: тёмная")):
+            action = view.addAction(title)
+            action.setCheckable(True)
+            action.setChecked(mode == self.settings.theme)
+            action.triggered.connect(lambda _=False, m=mode: self.set_theme(m))
+            group.addAction(action)
+            self._theme_actions[mode] = action
+
+    def set_theme(self, mode: str) -> None:
+        """Переключает тему оформления и запоминает выбор."""
+        if mode not in THEME_MODES:
+            return
+        self.settings.theme = mode
+        self._theme_actions[mode].setChecked(True)
+        self.apply_theme()
+
+    def apply_theme(self) -> None:
+        app = QApplication.instance()
+        apply_theme(app, self.settings.theme)
+        # Тень карточек зависит от темы и не входит в таблицу стилей — обновляем отдельно.
+        r, g, b, a = (int(x) for x in palette().shadow.split(","))
+        for frame in self.findChildren(QFrame, "card"):
+            effect = frame.graphicsEffect()
+            if isinstance(effect, QGraphicsDropShadowEffect):
+                effect.setColor(QColor(r, g, b, a))
 
     def login(self, token: str, username: str) -> None:
         """Ведущий вошёл: запоминаем токен (только в памяти) и открываем его викторины."""
