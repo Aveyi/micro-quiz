@@ -49,6 +49,17 @@ def test_unreachable_server():
         http_call(f"http://127.0.0.1:{port}")("GET", "/health", None, None)
 
 
+def test_server_accepts_but_never_answers(monkeypatch):
+    """Порт слушается, но ответа нет (например, у сервиса не отвечает база): ошибка, а не зависание."""
+    monkeypatch.setattr("app.seed.TIMEOUT_SEC", 0.5)
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        s.listen(1)  # соединения принимает ОС, а приложения-обработчика нет
+        port = s.getsockname()[1]
+        with pytest.raises(SeedError, match="не ответил"):
+            http_call(f"http://127.0.0.1:{port}")("GET", "/health", None, None)
+
+
 # --- загрузка в настоящий сервис (нужен PostgreSQL, TEST_DATABASE_URL) ---
 
 

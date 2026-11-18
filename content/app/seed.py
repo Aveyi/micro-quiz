@@ -63,6 +63,9 @@ def http_call(base_url: str) -> Call:
                 return e.code, None
         except urllib.error.URLError as e:
             raise SeedError(f"Сервер {base_url} недоступен: {e.reason}") from None
+        except OSError as e:
+            # Соединение есть, но ответа нет: таймаут или обрыв (например, у сервиса не отвечает база).
+            raise SeedError(f"Сервер {base_url} не ответил за {TIMEOUT_SEC} с: {e}") from None
 
     return call
 
